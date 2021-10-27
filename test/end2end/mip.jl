@@ -68,37 +68,6 @@ function BB.branch!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     end
 end
 
-function main()
-    m = Model(Cbc.Optimizer)
-    set_optimizer_attribute(m, "logLevel", 0)
-    @variable(m, x[1:3] >= 0)
-    @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] <= 6.1)   
-    @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] <= 8.1)   
-    @constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] <= 10.5)   
-    @objective(m, Max, x[1]+1.2x[2]+3.2x[3])
-
-    bnb_model = BB.initialize(; 
-        traverse = :BFS,
-        Node = MIPNode,
-        root = m
-    )
-    BB.set_root!(bnb_model, (
-        lbs = zeros(length(x)),
-        ubs = fill(Inf, length(x)),
-        status = MOI.OPTIMIZE_NOT_CALLED
-    ))
-
-    BB.optimize!(bnb_model)
-
-    @show bnb_model.solutions[1].node.lb
-    @show bnb_model.solutions[1].node.ub
-    @show bnb_model.solutions[1].solution
-    @show bnb_model.solutions[1].objective
-
-    # @show sol_x
-    # @show sol_x == [2.0,0.0,1.0]
-end
-
 @testset "MIP Problem with 3 variables" begin
     m = Model(Cbc.Optimizer)
     set_optimizer_attribute(m, "logLevel", 0)
@@ -126,4 +95,33 @@ end
 
     @test sol_x == [2,0,1]
     @test BB.get_objective_value(bnb_model) ≈ 5.2
+end
+
+@testset "MIP Problem with 3 variables minimize" begin
+    m = Model(Cbc.Optimizer)
+    set_optimizer_attribute(m, "logLevel", 0)
+    @variable(m, x[1:3] >= 0)
+    @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)   
+    @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)   
+    @constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] >= 10.5)   
+    @objective(m, Min, x[1]+1.2x[2]+3.2x[3])
+
+    bnb_model = BB.initialize(; 
+        traverse = :BFS,
+        Node = MIPNode,
+        root = m,
+        sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min
+    )
+    BB.set_root!(bnb_model, (
+        lbs = zeros(length(x)),
+        ubs = fill(Inf, length(x)),
+        status = MOI.OPTIMIZE_NOT_CALLED
+    ))
+
+    BB.optimize!(bnb_model)
+
+    sol_x = BB.get_solution(bnb_model)
+
+    @test sol_x ≈ [6.0,1.0,0.0]
+    @test BB.get_objective_value(bnb_model) ≈ 7.2
 end
