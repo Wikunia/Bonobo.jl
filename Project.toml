@@ -3,6 +3,10 @@ uuid = "f7b14807-3d4d-461a-888a-05dd4bca8bc3"
 authors = ["Ole Kroeger <o.kroeger@opensourc.es> and contributors"]
 version = "0.1.0"
 
+[deps]
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+NamedTupleTools = "d9ec5142-1e00-5aa0-9d6a-321866360f50"
+
 [compat]
 julia = "1.6"
 
