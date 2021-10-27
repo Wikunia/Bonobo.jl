@@ -1,0 +1,3 @@
+[deps]
+Bonobo = "f7b14807-3d4d-461a-888a-05dd4bca8bc3"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"

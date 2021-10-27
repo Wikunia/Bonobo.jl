@@ -1,0 +1,13 @@
+name = "Bonobo"
+uuid = "f7b14807-3d4d-461a-888a-05dd4bca8bc3"
+authors = ["Ole Kroeger <o.kroeger@opensourc.es> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1.6"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
