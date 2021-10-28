@@ -25,7 +25,7 @@ end
     AbstractTraverseStrategy
 
 The abstract type for a traverse strategy. 
-If you implement a new traverse strategy this must be the super type. 
+If you implement a new traverse strategy this must be the supertype. 
 You can check all currently available subtypes with `subtypes(AbstractTraverseStrategy)`.
 """
 abstract type AbstractTraverseStrategy end
