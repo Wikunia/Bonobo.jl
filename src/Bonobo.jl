@@ -90,11 +90,9 @@ while !terminated(tree) # as long as there are open nodes
     # updates the upper and lower bound of the node struct
     set_node_bound!(tree.sense, node, lb, ub)
 
-    # update the best bound of the tree depending on the new upper bound of the node
-    # calls bound! to remove nodes from the tree with a worse bound
-    update_best_bound!(tree, node)
     # update the best solution 
-    update_best_solution!(tree, node)
+    updated = update_best_solution!(tree, node)
+    updated && bound!(tree, node.id)
     
     # remove the current node
     close_node!(tree, node)
@@ -118,16 +116,28 @@ function optimize!(tree::BnBTree)
 
         set_node_bound!(tree.sense, node, lb, ub)
 
-        update_best_bound!(tree, node)
-        update_best_solution!(tree, node)
+        updated = update_best_solution!(tree, node)
+        updated && bound!(tree, node.id)
 
         close_node!(tree, node)
         branch!(tree, node)
     end
 end
 
+"""
+    terminated(tree::BnBTree)
+
+Return true when the branch and bound loop in [`optimize!`](@ref) should be terminated.
+Default behavior is to terminate the loop only when no nodes exist in the priority queue.
+"""
 terminated(tree::BnBTree) = isempty(tree.nodes)
 
+"""
+    set_node_bound!(objective_sense::Symbol, node::AbstractNode, lb, ub)
+
+Set the bounds of the `node` object to the lower and upper bound given. 
+Internally everything is stored as a minimization problem. Therefore the objective_sense `:Min`/`:Max` is needed.
+"""
 function set_node_bound!(objective_sense::Symbol, node::AbstractNode, lb, ub)
     if isnan(ub)
         ub = Inf
@@ -141,18 +151,14 @@ function set_node_bound!(objective_sense::Symbol, node::AbstractNode, lb, ub)
     end
 end
 
-function update_best_bound!(tree::BnBTree, node::AbstractNode)
-    isinf(node.lb) && return
-    node.lb <= tree.lb && return
+"""
+    bound!(tree::BnBTree, current_node_id)
 
-    tree.lb = node.lb
-
-    bound!(tree, node.id)
-end
-
+Close all nodes which have a lower bound higher or equal to the incumbent
+"""
 function bound!(tree::BnBTree, current_node_id)
     for (_,node) in tree.nodes
-        if node.id != current_node_id && node.lb >= tree.lb
+        if node.id != current_node_id && node.lb >= tree.incumbent
             close_node!(tree, node)
         end
     end
@@ -161,12 +167,13 @@ end
 close_node!(tree::BnBTree, node::AbstractNode) = delete!(tree.nodes, node.id)
 
 function update_best_solution!(tree::BnBTree, node::AbstractNode)
-    isinf(node.ub) && return
-    node.ub >= tree.incumbent && return
+    isinf(node.ub) && return false
+    node.ub >= tree.incumbent && return false
 
     tree.incumbent = node.ub
 
     add_new_solution!(tree, node)
+    return true
 end
 
 function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
