@@ -58,6 +58,7 @@ end
     get_next_node(tree::BnBTree, travese_strategy::BFS)
 
 Get the next node of the tree which shall be evaluted next by [`evaluate_node`](@ref).
+If you want to implement your own traversing strategy check out [`AbstractTraverseStrategy`](@ref).
 """
 function get_next_node(tree::BnBTree, travese_strategy::BFS)
     _, node = peek(tree.nodes)

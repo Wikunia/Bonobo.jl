@@ -27,6 +27,9 @@ end
 The abstract type for a traverse strategy. 
 If you implement a new traverse strategy this must be the super type. 
 You can check all currently available subtypes with `subtypes(AbstractTraverseStrategy)`.
+
+If you want to implement your own strategy the [`get_next_node`](@ref) function needs a new method 
+which dispatches on the `traverse_strategy` argument. 
 """
 abstract type AbstractTraverseStrategy end
 
@@ -121,7 +124,7 @@ The steps are the following:
 ```julia
 while !terminated(tree) # as long as there are open nodes
     # get the next open node depending on the traverse strategy
-    node = get_next_node(tree) 
+    node = get_next_node(tree, tree.options.traverse_strategy) 
     # needs to be implemented by you
     # Should evaluate the current node and return the lower and upper bound
     # if the problem is infeasible both values should be set to NaN
