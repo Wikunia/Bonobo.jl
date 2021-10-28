@@ -21,10 +21,37 @@ mutable struct DefaultSolution{Node<:AbstractNode,Value} <: AbstractSolution{Nod
     node      :: Node
 end
 
+"""
+    AbstractTraverseStrategy
+
+The abstract type for a traverse strategy. 
+If you implement a new traverse strategy this must be the super type. 
+You can check all currently available subtypes with `subtypes(AbstractTraverseStrategy)`.
+"""
 abstract type AbstractTraverseStrategy end
+
+"""
+    AbstractBranchStrategy
+
+The abstract type for a branching strategy. 
+If you implement a new branch strategy this must be the super type. 
+You can check all currently available subtypes with `subtypes(AbstractBranchStrategy)`.
+"""
 abstract type AbstractBranchStrategy end
 
+"""
+    BFS <: AbstractTraverseStrategy
+
+The BFS traverse strategy always picks the node with the lowest bound first.
+If there is a tie then the smallest node id is used as a tie breaker.
+"""
 struct BFS <: AbstractTraverseStrategy end
+
+"""
+    FIRST <: AbstractBranchStrategy
+
+The first branching strategy is intented to simply use the first variable which isn't fixed yet to branch on next.
+"""
 struct FIRST <: AbstractBranchStrategy end
 mutable struct Options
     traverse_strategy   :: AbstractTraverseStrategy
