@@ -10,7 +10,7 @@ The idea is to make it very customizable and provide useful methods regarding br
 The following three functions need to be implemented to start the process.
 
 - [`initialize`](@ref)
-  - For initializing the framework itself and setting options. 
+  - For initializing the [`BnBTree`](@ref) structure itself with the model information and setting options like the traverse and branch strategy.
 - [`set_root!`](@ref)
   - Setting the information for the root node which will be evaluated first with [`evaluate_node!`](@ref)
 - [`optimize!`](@ref)
