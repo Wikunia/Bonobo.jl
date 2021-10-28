@@ -6,7 +6,7 @@ mutable struct MIPNode <: AbstractNode
     status :: MOI.TerminationStatusCode
 end
 
-BB.get_relaxed_values(tree::BnBTree{MIPNode, JuMP.Model}) = value.(tree.root[:x])
+BB.get_relaxed_values(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode) = value.(tree.root[:x])
 
 function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     m = tree.root
@@ -42,7 +42,6 @@ function BB.branch!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
         if !isapprox_discrete(x)
             # left child set upper bound
             ubs[i] = floor(Int, x)
-            @show ubs
 
             BB.add_node!(tree, (
                 lbs = copy(node.lbs),
@@ -52,7 +51,6 @@ function BB.branch!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
 
             # left child set upper bound
             lbs[i] = ceil(Int, x)
-            @show lbs
 
             BB.add_node!(tree, (
                 lbs = lbs,

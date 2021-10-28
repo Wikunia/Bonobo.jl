@@ -1,7 +1,39 @@
+"""
+    set_root!(tree::BnBTree, node_info::NamedTuple)
+
+Set the root node information based on the `node_info` which needs to include the same fields as the `Node` struct given 
+to the [`initialize`](@ref) method. (Besides the `std` field which is set by Bonobo automatically)
+
+# Example
+If your node structure is the following:
+```julia
+mutable struct MIPNode <: AbstractNode
+    std :: BnBNode
+    lbs :: Vector{Float64}
+    ubs :: Vector{Float64}
+    status :: MOI.TerminationStatusCode
+end
+```
+
+then you can call the function with this syntax:
+
+```julia
+BB.set_root!(bnb_model, (
+    lbs = fill(-Inf, length(x)),
+    ubs = fill(Inf, length(x)),
+    status = MOI.OPTIMIZE_NOT_CALLED
+))
+```
+"""
 function set_root!(tree::BnBTree, node_info::NamedTuple)
     add_node!(tree, node_info)
 end
 
+"""
+    add_node!(tree::BnBTree{Node}, node_info::NamedTuple)
+
+Add a new node to the tree using the `node_info`. For information on that see [`set_root!`](@ref).
+"""
 function add_node!(tree::BnBTree{Node}, node_info::NamedTuple) where Node <: AbstractNode
     node_id = tree.num_nodes + 1
     node = create_node(Node, node_id, node_info)
@@ -9,6 +41,12 @@ function add_node!(tree::BnBTree{Node}, node_info::NamedTuple) where Node <: Abs
     tree.num_nodes += 1
 end
 
+"""
+    create_node(Node, node_id::Int, node_info::NamedTuple)
+
+Creates a node of type `Node` with id `node_id` and the named tuple `node_info`. 
+For information on that see [`set_root!`](@ref).
+"""
 function create_node(Node, node_id::Int, node_info::NamedTuple)
     bnb_node = structfromnt(BnBNode, (id = node_id, lb = -Inf, ub = Inf))
     bnb_nt = (std = bnb_node,)
@@ -16,8 +54,13 @@ function create_node(Node, node_id::Int, node_info::NamedTuple)
     return structfromnt(Node, node_nt)
 end
 
+"""
+    get_next_node(tree::BnBTree)
+
+Get the next node of the tree which shall be evaluted next by [`evaluate_node`](@ref).
+"""
 function get_next_node(tree::BnBTree)
-    id, node = peek(tree.nodes)
+    _, node = peek(tree.nodes)
     return node
 end
 

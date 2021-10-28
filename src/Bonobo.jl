@@ -164,8 +164,19 @@ function bound!(tree::BnBTree, current_node_id)
     end
 end
 
+"""
+    close_node!(tree::BnBTree, node::AbstractNode)
+
+Delete the node from the priority queue from the nodes
+"""
 close_node!(tree::BnBTree, node::AbstractNode) = delete!(tree.nodes, node.id)
 
+"""
+    update_best_solution!(tree::BnBTree, node::AbstractNode)
+
+Update the best solution when we found a better incumbent.
+Calls [`add_new_solution!`] if this is the case
+"""
 function update_best_solution!(tree::BnBTree, node::AbstractNode)
     isinf(node.ub) && return false
     node.ub >= tree.incumbent && return false
@@ -176,8 +187,16 @@ function update_best_solution!(tree::BnBTree, node::AbstractNode)
     return true
 end
 
+"""
+    add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
+
+Currently it changes the general solution itself by calling [`get_relaxed_values`](@ref) which needs to be implemented by you.
+# Todo: Add a possibility to store several solutions based on some options.
+
+This function needs to be implemented by you if you have a different type of Solution object than [`DefaultSolution`](@ref).
+"""
 function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
-    sol = DefaultSolution(node.ub, get_relaxed_values(tree), node)
+    sol = DefaultSolution(node.ub, get_relaxed_values(tree, node), node)
     if isempty(tree.solutions)
         push!(tree.solutions, sol)
     else
@@ -187,13 +206,31 @@ end
 
 branch!(tree::BnBTree, node::AbstractNode) = @warn "branch! needs to be implemented by you ;)"
 
-get_relaxed_values(tree::BnBTree) = @warn "get_relaxed_values needs to be implemented by you ;)" 
+"""
+    get_relaxed_values(tree::BnBTree, node::AbstractNode)
 
-function get_solution(tree::BnBTree; result=1)
+Get the values of the current node. This is always called only after [`evaluate_node`](@ref) is called.
+It is used to store a `Solution` object.
+Return the type of `Value` given to the [`initialize`](@ref) method.
+"""
+get_relaxed_values(tree::BnBTree, node::AbstractNode) = @warn "get_relaxed_values needs to be implemented by you. It was called with tree::$(typeof(tree)) and node::$(typeof(node))" 
+
+"""
+    get_solution(tree::BnBTree; result=1)
+
+Return the solution values of the problem. 
+See [`get_objective_value`](@ref) to obtain the objective value instead.
+"""
+function get_solution(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:DefaultSolution{N,V}}
     return tree.solutions[result].solution
 end
 
-function get_objective_value(tree::BnBTree; result=1)
+"""
+    get_objective_value(tree::BnBTree; result=1)
+
+Return the objective value
+"""
+function get_objective_value(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:DefaultSolution{N,V}}
     if tree.sense == :Max
         return -tree.solutions[result].objective
     else
