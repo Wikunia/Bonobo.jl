@@ -17,19 +17,15 @@ function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     status = termination_status(m)
     node.status = status
     if status != MOI.OPTIMAL
-        return 
+        return NaN,NaN
     end
 
-    sense = objective_sense(m)
     obj_val = objective_value(m)
-    if sense == MOI.MAX_SENSE
-        obj_val = -obj_val
-    end
-    node.lb = obj_val
-
     if all(isapprox_discrete.(value.(m[:x])))
         node.ub = obj_val
+        return obj_val, obj_val
     end
+    return obj_val, NaN
 end
 
 function BB.branch!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
