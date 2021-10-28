@@ -57,7 +57,7 @@ end
 """
     get_next_node(tree::BnBTree)
 
-Get the next node of the tree which shall be evaluted next by [`evaluate_node`](@ref).
+Get the next node of the tree which shall be evaluted next by [`evaluate_node!`](@ref).
 """
 function get_next_node(tree::BnBTree)
     _, node = peek(tree.nodes)
@@ -73,4 +73,9 @@ function Base.isless(n1::AbstractNode, n2::AbstractNode)
     return false
 end
 
+"""
+    evaluate_node!(tree, node)
+
+Evaluate the current node and return the lower and upper bound of that node.
+"""
 evaluate_node!(tree, node) = @warn "You have to implement evaluate_node! yourself ;)"

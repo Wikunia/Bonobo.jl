@@ -3,24 +3,75 @@ module Bonobo
 using DataStructures
 using NamedTupleTools
 
+"""
+    AbstractNode
+
+The abstract type for a tree node. Your own type for `Node` given to [`initialize`](@ref) needs to have this as the super type.
+The default if you don't provide your own is [`DefaultNode`](@ref).
+"""
 abstract type AbstractNode end
+
+"""
+    AbstractSolution{Node<:AbstractNode, Value}
+
+The abstract type for a `Solution` object. The default is [`DefaultSolution`](@ref).
+It is parameterized by `Node` and `Value` where `Value` is the value which describes the full solution i.e the value for every variable.
+"""
 abstract type AbstractSolution{Node<:AbstractNode, Value} end
+
+"""
+    BnBNode
+
+Holds the necessary information of every node.
+This needs to be added by every `AbstractNode` as `std::BnBNode`
+
+```julia
+id :: Int
+lb :: Float64 
+ub :: Float64
+```
+"""
 mutable struct BnBNode
     id :: Int
     lb :: Float64 
     ub :: Float64
 end
 
+"""
+    DefaultNode <: AbstractNode
+
+The default structure for saving node information. 
+Currently this includes only the necessary `std::BnBNode` which needs to be part of every [`AbstractNode`](@ref).
+"""
 mutable struct DefaultNode <: AbstractNode
     std :: BnBNode
 end
 
+"""
+    DefaultSolution{Node<:AbstractNode,Value} <: AbstractSolution{Node, Value}
+
+The default struct to save a solution of the branch and bound run.
+It holds 
+```julia
+objective :: Float64
+solution  :: Value 
+node      :: Node
+```
+Both the `Value` and the `Node` type are determined by the [`initialize`](@ref) method.
+
+`solution` holds the information to obtain the solution for example the values of all variables. 
+"""
 mutable struct DefaultSolution{Node<:AbstractNode,Value} <: AbstractSolution{Node, Value}
     objective :: Float64
     solution  :: Value
     node      :: Node
 end
 
+"""
+    BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{Node,Value}}
+
+Holds all the information of the branch and bound tree. 
+"""
 mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{Node,Value}}
     incumbent::Float64
     lb::Float64
@@ -209,7 +260,7 @@ branch!(tree::BnBTree, node::AbstractNode) = @warn "branch! needs to be implemen
 """
     get_relaxed_values(tree::BnBTree, node::AbstractNode)
 
-Get the values of the current node. This is always called only after [`evaluate_node`](@ref) is called.
+Get the values of the current node. This is always called only after [`evaluate_node!`](@ref) is called.
 It is used to store a `Solution` object.
 Return the type of `Value` given to the [`initialize`](@ref) method.
 """
