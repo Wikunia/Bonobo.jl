@@ -55,11 +55,11 @@ function create_node(Node, node_id::Int, node_info::NamedTuple)
 end
 
 """
-    get_next_node(tree::BnBTree)
+    get_next_node(tree::BnBTree, travese_strategy::BFS)
 
 Get the next node of the tree which shall be evaluted next by [`evaluate_node`](@ref).
 """
-function get_next_node(tree::BnBTree)
+function get_next_node(tree::BnBTree, travese_strategy::BFS)
     _, node = peek(tree.nodes)
     return node
 end
