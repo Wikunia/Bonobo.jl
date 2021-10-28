@@ -33,14 +33,6 @@ which dispatches on the `traverse_strategy` argument.
 abstract type AbstractTraverseStrategy end
 
 """
-    AbstractBranchStrategy
-
-The abstract type for a branching strategy. 
-If you implement a new branch strategy this must be the super type. 
-"""
-abstract type AbstractBranchStrategy end
-
-"""
     BFS <: AbstractTraverseStrategy
 
 The BFS traverse strategy always picks the node with the lowest bound first.
@@ -48,15 +40,8 @@ If there is a tie then the smallest node id is used as a tie breaker.
 """
 struct BFS <: AbstractTraverseStrategy end
 
-"""
-    FIRST <: AbstractBranchStrategy
-
-The first branching strategy is intented to simply use the first variable which isn't fixed yet to branch on next.
-"""
-struct FIRST <: AbstractBranchStrategy end
 mutable struct Options
     traverse_strategy   :: AbstractTraverseStrategy
-    branch_strategy     :: AbstractBranchStrategy
 end
 
 mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{Node,Value}}
@@ -81,7 +66,6 @@ Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various method
 
 # Keyword arguments
 - `traverse_strategy` [`BFS`] currently the only supported traverse strategy is `BFS`. Should be an `AbstractTraverseStrategy`
-- `branch_strategy` [`FIRST`] currently the only supported branch strategy is `FIRST`. Should be an `AbstractBranchStrategy`
 - `Node` [`DefaultNode`](@ref) can be special structure which is used to store all information about a node. 
     - needs to have `AbstractNode` as the super type
     - needs to have `std :: BnBNode` as a field (see [`BnBNode`](@ref))
@@ -94,7 +78,6 @@ Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 """
 function initialize(;
     traverse_strategy = BFS,
-    branch_strategy = FIRST,
     Node = DefaultNode,
     Value = Vector{Float64},
     Solution = DefaultSolution{Node,Value},
@@ -109,7 +92,7 @@ function initialize(;
         root,
         0,
         sense,
-        Options(traverse_strategy(), branch_strategy())
+        Options(traverse_strategy())
     )
 end
 
@@ -280,6 +263,6 @@ end
 
 export BnBTree, BnBNode, AbstractNode, AbstractSolution, isapprox_discrete
 
-export AbstractTraverseStrategy, AbstractBranchStrategy
+export AbstractTraverseStrategy
 
 end
