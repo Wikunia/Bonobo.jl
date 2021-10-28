@@ -6,7 +6,7 @@ using NamedTupleTools
 """
     AbstractNode
 
-The abstract type for a tree node. Your own type for `Node` given to [`initialize`](@ref) needs to have this as the super type.
+The abstract type for a tree node. Your own type for `Node` given to [`initialize`](@ref) needs to subtype it.
 The default if you don't provide your own is [`DefaultNode`](@ref).
 """
 abstract type AbstractNode end
