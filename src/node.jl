@@ -18,7 +18,7 @@ end
 then you can call the function with this syntax:
 
 ```julia
-BB.set_root!(bnb_model, (
+Bonobo.set_root!(tree, (
     lbs = fill(-Inf, length(x)),
     ubs = fill(Inf, length(x)),
     status = MOI.OPTIMIZE_NOT_CALLED

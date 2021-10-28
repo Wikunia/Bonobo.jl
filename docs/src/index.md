@@ -9,11 +9,12 @@ The idea is to make it very customizable and provide useful methods regarding br
 
 The following three functions need to be implemented to start the process.
 
-- [`initialize`](@ref)
+- [`initialize`](@ref) (`Bonobo.initalize(; kwargs...)`)
   - For initializing the [`BnBTree`](@ref) structure itself with the model information and setting options like the traverse and branch strategy.
-- [`set_root!`](@ref)
+  - It returns the created [`BnBTree`](@ref) object which I'll call `tree`.
+- [`set_root!`](@ref) (`Bonobo.set_root!(tree, node_info::NamedTuple)`)
   - Setting the information for the root node which will be evaluated first with [`evaluate_node!`](@ref)
-- [`optimize!`](@ref)
+- [`optimize!`](@ref) (`Bonobo.optimize!(tree)`)
   - The optimization function calls several branch and bound functions in a loop. Check the docstring for detailed information.
 
 A couple of methods need to be implemented by you to apply it to your need. 
