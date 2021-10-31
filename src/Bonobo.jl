@@ -21,15 +21,38 @@ mutable struct DefaultSolution{Node<:AbstractNode,Value} <: AbstractSolution{Nod
     node      :: Node
 end
 
+"""
+    AbstractTraverseStrategy
+
+The abstract type for a traverse strategy. 
+If you implement a new traverse strategy this must be the supertype. 
+
+If you want to implement your own strategy the [`get_next_node`](@ref) function needs a new method 
+which dispatches on the `traverse_strategy` argument. 
+"""
+abstract type AbstractTraverseStrategy end
+
+"""
+    BFS <: AbstractTraverseStrategy
+
+The BFS traverse strategy always picks the node with the lowest bound first.
+If there is a tie then the smallest node id is used as a tie breaker.
+"""
+struct BFS <: AbstractTraverseStrategy end
+
+mutable struct Options
+    traverse_strategy   :: AbstractTraverseStrategy
+end
+
 mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{Node,Value}}
     incumbent::Float64
     lb::Float64
     solutions::Vector{Solution}
     nodes::PriorityQueue{Int,Node}
     root::Root
-    traverse_strategy::Symbol
     num_nodes::Int
     sense::Symbol
+    options::Options
 end
 
 include("util.jl")
@@ -42,7 +65,7 @@ Initialize the branch and bound framework with the the following arguments.
 Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various methods.
 
 # Keyword arguments
-- `traverse` [`:BFS`] currently the only supported traverse strategy is `BFS`.
+- `traverse_strategy` [`BFS`] currently the only supported traverse strategy is `BFS`. Should be an `AbstractTraverseStrategy`
 - `Node` [`DefaultNode`](@ref) can be special structure which is used to store all information about a node. 
     - needs to have `AbstractNode` as the super type
     - needs to have `std :: BnBNode` as a field (see [`BnBNode`](@ref))
@@ -54,7 +77,7 @@ Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various method
 Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 """
 function initialize(;
-    traverse = :BFS,
+    traverse_strategy = BFS,
     Node = DefaultNode,
     Value = Vector{Float64},
     Solution = DefaultSolution{Node,Value},
@@ -67,9 +90,9 @@ function initialize(;
         Vector{Solution}(),
         PriorityQueue{Int,Node}(),
         root,
-        traverse,
         0,
         sense,
+        Options(traverse_strategy())
     )
 end
 
@@ -82,7 +105,7 @@ The steps are the following:
 ```julia
 while !terminated(tree) # as long as there are open nodes
     # get the next open node depending on the traverse strategy
-    node = get_next_node(tree) 
+    node = get_next_node(tree, tree.options.traverse_strategy) 
     # needs to be implemented by you
     # Should evaluate the current node and return the lower and upper bound
     # if the problem is infeasible both values should be set to NaN
@@ -106,7 +129,7 @@ every function of the above can be overriden by your own method.
 """
 function optimize!(tree::BnBTree)
     while !terminated(tree)
-        node = get_next_node(tree)
+        node = get_next_node(tree, tree.options.traverse_strategy)
         lb, ub = evaluate_node!(tree, node) 
         # if the problem was infeasible we simply close the node and continue
         if isnan(lb) && isnan(ub)
@@ -239,5 +262,7 @@ function get_objective_value(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:D
 end
 
 export BnBTree, BnBNode, AbstractNode, AbstractSolution, isapprox_discrete
+
+export AbstractTraverseStrategy
 
 end
