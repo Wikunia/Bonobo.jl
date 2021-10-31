@@ -278,7 +278,7 @@ function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,
     end
 end
 
-branch!(tree::BnBTree, node::AbstractNode) = @warn "branch! needs to be implemented by you ;)"
+function branch! end
 
 """
     get_relaxed_values(tree::BnBTree, node::AbstractNode)
@@ -287,7 +287,7 @@ Get the values of the current node. This is always called only after [`evaluate_
 It is used to store a `Solution` object.
 Return the type of `Value` given to the [`initialize`](@ref) method.
 """
-get_relaxed_values(tree::BnBTree, node::AbstractNode) = @warn "get_relaxed_values needs to be implemented by you. It was called with tree::$(typeof(tree)) and node::$(typeof(node))" 
+function get_relaxed_values end
 
 """
     get_solution(tree::BnBTree; result=1)
