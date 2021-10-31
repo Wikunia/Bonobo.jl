@@ -79,4 +79,4 @@ end
 
 Evaluate the current node and return the lower and upper bound of that node.
 """
-evaluate_node!(tree, node) = @warn "You have to implement evaluate_node! yourself ;)"
+function evaluate_node! end
