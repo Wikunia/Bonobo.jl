@@ -18,7 +18,7 @@ end
 then you can call the function with this syntax:
 
 ```julia
-BB.set_root!(bnb_model, (
+Bonobo.set_root!(tree, (
     lbs = fill(-Inf, length(x)),
     ubs = fill(Inf, length(x)),
     status = MOI.OPTIMIZE_NOT_CALLED
@@ -57,7 +57,7 @@ end
 """
     get_next_node(tree::BnBTree, travese_strategy::BFS)
 
-Get the next node of the tree which shall be evaluted next by [`evaluate_node`](@ref).
+Get the next node of the tree which shall be evaluted next by [`evaluate_node!`](@ref).
 If you want to implement your own traversing strategy check out [`AbstractTraverseStrategy`](@ref).
 """
 function get_next_node(tree::BnBTree, travese_strategy::BFS)
@@ -74,4 +74,9 @@ function Base.isless(n1::AbstractNode, n2::AbstractNode)
     return false
 end
 
-evaluate_node!(tree, node) = @warn "You have to implement evaluate_node! yourself ;)"
+"""
+    evaluate_node!(tree, node)
+
+Evaluate the current node and return the lower and upper bound of that node.
+"""
+function evaluate_node! end
