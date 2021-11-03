@@ -101,7 +101,7 @@ struct BFS <: AbstractTraverseStrategy end
 """
     FIRST <: AbstractBranchStrategy
 
-The `FIRST` strategy always picks the first not yet discrete variable to branch on.
+The `FIRST` strategy always picks the first variable with a fractional solution to branch on.
 """
 struct FIRST <: AbstractBranchStrategy end
 
