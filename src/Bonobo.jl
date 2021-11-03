@@ -78,6 +78,18 @@ which dispatches on the `traverse_strategy` argument.
 """
 abstract type AbstractTraverseStrategy end
 
+
+"""
+    AbstractBranchStrategy
+
+The abstract type for a branching strategy. 
+If you implement a new branching strategy this must be the supertype. 
+
+If you want to implement your own strategy the [`get_branching_variable`](@ref) function needs a new method 
+which dispatches on the `branch_strategy` argument. 
+"""
+abstract type AbstractBranchStrategy end
+
 """
     BFS <: AbstractTraverseStrategy
 
@@ -86,8 +98,16 @@ If there is a tie then the smallest node id is used as a tie breaker.
 """
 struct BFS <: AbstractTraverseStrategy end
 
+"""
+    FIRST <: AbstractBranchStrategy
+
+The `FIRST` strategy always picks the first not yet discrete variable to branch on.
+"""
+struct FIRST <: AbstractBranchStrategy end
+
 mutable struct Options
     traverse_strategy   :: AbstractTraverseStrategy
+    branch_strategy     :: AbstractBranchStrategy
 end
 
 """
@@ -101,6 +121,7 @@ mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{
     solutions::Vector{Solution}
     nodes::PriorityQueue{Int,Node}
     root::Root
+    discrete_indices::Vector{Int}
     num_nodes::Int
     sense::Symbol
     options::Options
@@ -108,6 +129,7 @@ end
 
 include("util.jl")
 include("node.jl")
+include("branching.jl")
 
 """
     initialize(; kwargs...)
@@ -129,6 +151,7 @@ Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 """
 function initialize(;
     traverse_strategy = BFS,
+    branch_strategy = FIRST,
     Node = DefaultNode,
     Value = Vector{Float64},
     Solution = DefaultSolution{Node,Value},
@@ -141,11 +164,14 @@ function initialize(;
         Vector{Solution}(),
         PriorityQueue{Int,Node}(),
         root,
+        get_discrete_indices(root),
         0,
         sense,
-        Options(traverse_strategy())
+        Options(traverse_strategy(), branch_strategy())
     )
 end
+
+function get_discrete_indices end
 
 """
     optimize!(tree::BnBTree)

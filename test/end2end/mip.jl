@@ -6,12 +6,31 @@ mutable struct MIPNode <: AbstractNode
     status :: MOI.TerminationStatusCode
 end
 
-BB.get_relaxed_values(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode) = value.(tree.root[:x])
+function BB.get_relaxed_values(tree::BnBTree{MIPNode, JuMP.Model}, node)
+    vids = MOI.get(tree.root ,MOI.ListOfVariableIndices())
+    vars = VariableRef.(tree.root, vids)
+    return JuMP.value.(vars)
+end
+
+_ci(vi::MOI.VariableIndex, S::Type) = MOI.ConstraintIndex{MOI.SingleVariable, S}(vi.value)
+
+function BB.get_discrete_indices(model::JuMP.Model)
+    vis = MOI.get(model, MOI.ListOfVariableIndices())
+    integer_bool_arr = map(vis) do vi
+        MOI.is_valid(model.moi_backend, _ci(vi, MOI.Integer))
+    end
+    binary_bool_arr = map(vis) do vi
+        MOI.is_valid(model.moi_backend, _ci(vi, MOI.ZeroOne))
+    end
+    return findall(integer_bool_arr .| binary_bool_arr)
+end
 
 function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     m = tree.root
-    JuMP.set_lower_bound.(m[:x], node.lbs)
-    JuMP.set_upper_bound.(m[:x], node.ubs)
+    vids = MOI.get(m ,MOI.ListOfVariableIndices())
+    vars = VariableRef.(m, vids)
+    JuMP.set_lower_bound.(vars, node.lbs)
+    JuMP.set_upper_bound.(vars, node.ubs)
 
     optimize!(m)
     status = termination_status(m)
@@ -21,7 +40,7 @@ function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     end
 
     obj_val = objective_value(m)
-    if all(isapprox_discrete.(value.(m[:x])))
+    if all(isapprox_discrete.(value.(vars)))
         node.ub = obj_val
         return obj_val, obj_val
     end
@@ -32,12 +51,14 @@ function BB.branch!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     !isinf(node.ub) && return
     node.status != MOI.OPTIMAL && return 
     m = tree.root
+    vids = MOI.get(m ,MOI.ListOfVariableIndices())
+    vars = VariableRef.(m, vids)
     # first variable which is not discrete
 
     lbs = copy(node.lbs)
     ubs = copy(node.ubs)
 
-    vx = value.(m[:x])
+    vx = value.(vars)
     for (i,x) in enumerate(vx)
         if !isapprox_discrete(x)
             # left child set upper bound
