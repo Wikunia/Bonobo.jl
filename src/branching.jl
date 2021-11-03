@@ -1,7 +1,7 @@
 """
     branch!(tree, node)
 
-Get the brranching variable with [`get_branching_variable`](@ref) and then calls [`branch_on_variable!`](@ref).
+Get the branching variable with [`get_branching_variable`](@ref) and then calls [`branch_on_variable!`](@ref).
 """
 function branch!(tree, node)
     variable = get_branching_variable(tree, tree.options.branch_strategy, node)
