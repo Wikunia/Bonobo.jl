@@ -83,7 +83,7 @@ abstract type AbstractTraverseStrategy end
     AbstractBranchStrategy
 
 The abstract type for a branching strategy. 
-If you implement a new branching strategy this must be the supertype. 
+If you implement a new branching strategy, this must be the supertype. 
 
 If you want to implement your own strategy the [`get_branching_variable`](@ref) function needs a new method 
 which dispatches on the `branch_strategy` argument. 
