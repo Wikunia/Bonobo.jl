@@ -26,6 +26,28 @@ function get_branching_variable(tree::BnBTree, ::FIRST, node::AbstractNode)
 end
 
 """
+    get_branching_variable(tree::BnBTree, ::MOST_INFEASIBLE, node::AbstractNode)
+
+Return the branching variable which is furthest away from being discrete.
+"""
+function get_branching_variable(tree::BnBTree, ::MOST_INFEASIBLE, node::AbstractNode)
+    values = get_relaxed_values(tree, node)
+    best_idx = -1
+    max_distance_to_feasible = 0.0
+    for i in tree.discrete_indices
+        value = values[i]
+        if !is_approx_discrete(tree, value)
+            distance_to_feasible = abs(round(value)-value)
+            if distance_to_feasible > max_distance_to_feasible
+                best_idx = i
+                max_distance_to_feasible = distance_to_feasible
+            end
+        end
+    end
+    return best_idx
+end
+
+"""
     branch_on_variable!(tree::BnBTree, node::AbstractNode, vidx::Int)
 
 Create new branching nodes based on the variable index `vidx`.

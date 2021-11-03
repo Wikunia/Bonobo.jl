@@ -105,6 +105,13 @@ The `FIRST` strategy always picks the first not yet discrete variable to branch 
 """
 struct FIRST <: AbstractBranchStrategy end
 
+"""
+    MOST_INFEASIBLE <: AbstractBranchStrategy
+
+The `MOST_INFEASIBLE` strategy always picks the variable which is furthest away from being discrete.
+"""
+struct MOST_INFEASIBLE <: AbstractBranchStrategy end
+
 mutable struct Options
     traverse_strategy   :: AbstractTraverseStrategy
     branch_strategy     :: AbstractBranchStrategy
@@ -141,8 +148,8 @@ Initialize the branch and bound framework with the the following arguments.
 Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various methods.
 
 # Keyword arguments
-- `traverse_strategy` [`BFS`] currently the only supported traverse strategy is `BFS`. Should be an [`AbstractTraverseStrategy`](@ref)
-- `branch_strategy` [`FIRST`] currently the only supported branching strategy is `FIRST`. Should be an [`AbstractBranchStrategy`](@ref)
+- `traverse_strategy` [`BFS`] currently the only supported traverse strategy is [`BFS`](@ref). Should be an [`AbstractTraverseStrategy`](@ref)
+- `branch_strategy` [`FIRST`] currently the only supported branching strategies are [`FIRST`](@ref) and [`MOST_INFEASIBLE`](@ref). Should be an [`AbstractBranchStrategy`](@ref)
 - `atol` [1e-6] the absolute tolerance to check whether a value is discrete
 - `rtol` [1e-6] the relative tolerance to check whether a value is discrete
 - `Node` [`DefaultNode`](@ref) can be special structure which is used to store all information about a node. 
