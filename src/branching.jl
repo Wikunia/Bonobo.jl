@@ -28,7 +28,8 @@ end
 """
     get_branching_variable(tree::BnBTree, ::MOST_INFEASIBLE, node::AbstractNode)
 
-Return the branching variable which is furthest away from being discrete.
+Return the branching variable which is furthest away from being discrete
+or `-1` if all integer constraints are respected.
 """
 function get_branching_variable(tree::BnBTree, ::MOST_INFEASIBLE, node::AbstractNode)
     values = get_relaxed_values(tree, node)
