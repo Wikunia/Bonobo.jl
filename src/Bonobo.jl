@@ -108,6 +108,8 @@ struct FIRST <: AbstractBranchStrategy end
 mutable struct Options
     traverse_strategy   :: AbstractTraverseStrategy
     branch_strategy     :: AbstractBranchStrategy
+    atol                :: Float64
+    rtol                :: Float64
 end
 
 """
@@ -126,6 +128,7 @@ mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{
     sense::Symbol
     options::Options
 end
+Base.broadcastable(x::BnBTree) = Ref(x)
 
 include("util.jl")
 include("node.jl")
@@ -138,7 +141,10 @@ Initialize the branch and bound framework with the the following arguments.
 Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various methods.
 
 # Keyword arguments
-- `traverse_strategy` [`BFS`] currently the only supported traverse strategy is `BFS`. Should be an `AbstractTraverseStrategy`
+- `traverse_strategy` [`BFS`] currently the only supported traverse strategy is `BFS`. Should be an [`AbstractTraverseStrategy`](@ref)
+- `branch_strategy` [`FIRST`] currently the only supported branching strategy is `FIRST`. Should be an [`AbstractBranchStrategy`](@ref)
+- `atol` [1e-6] the absolute tolerance to check whether a value is discrete
+- `rtol` [1e-6] the relative tolerance to check whether a value is discrete
 - `Node` [`DefaultNode`](@ref) can be special structure which is used to store all information about a node. 
     - needs to have `AbstractNode` as the super type
     - needs to have `std :: BnBNode` as a field (see [`BnBNode`](@ref))
@@ -152,6 +158,8 @@ Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 function initialize(;
     traverse_strategy = BFS,
     branch_strategy = FIRST,
+    atol = 1e-6,
+    rtol = 1e-6,
     Node = DefaultNode,
     Value = Vector{Float64},
     Solution = DefaultSolution{Node,Value},
@@ -167,7 +175,7 @@ function initialize(;
         get_discrete_indices(root),
         0,
         sense,
-        Options(traverse_strategy(), branch_strategy())
+        Options(traverse_strategy(), branch_strategy(), atol, rtol)
     )
 end
 
@@ -304,8 +312,6 @@ function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,
     end
 end
 
-function branch! end
-
 """
     get_relaxed_values(tree::BnBTree, node::AbstractNode)
 
@@ -338,7 +344,7 @@ function get_objective_value(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:D
     end
 end
 
-export BnBTree, BnBNode, AbstractNode, AbstractSolution, isapprox_discrete
+export BnBTree, BnBNode, AbstractNode, AbstractSolution
 
 export AbstractTraverseStrategy
 

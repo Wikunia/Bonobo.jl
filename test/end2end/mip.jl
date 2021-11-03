@@ -12,17 +12,10 @@ function BB.get_relaxed_values(tree::BnBTree{MIPNode, JuMP.Model}, node)
     return JuMP.value.(vars)
 end
 
-_ci(vi::MOI.VariableIndex, S::Type) = MOI.ConstraintIndex{MOI.SingleVariable, S}(vi.value)
-
 function BB.get_discrete_indices(model::JuMP.Model)
+    # every variable should be discrete
     vis = MOI.get(model, MOI.ListOfVariableIndices())
-    integer_bool_arr = map(vis) do vi
-        MOI.is_valid(model.moi_backend, _ci(vi, MOI.Integer))
-    end
-    binary_bool_arr = map(vis) do vi
-        MOI.is_valid(model.moi_backend, _ci(vi, MOI.ZeroOne))
-    end
-    return findall(integer_bool_arr .| binary_bool_arr)
+    return 1:length(vis)
 end
 
 function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
@@ -40,47 +33,43 @@ function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     end
 
     obj_val = objective_value(m)
-    if all(isapprox_discrete.(value.(vars)))
+    if all(BB.is_approx_discrete.(tree, value.(vars)))
         node.ub = obj_val
         return obj_val, obj_val
     end
     return obj_val, NaN
 end
 
-function BB.branch!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
+function BB.branch_on_variable!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode, vidx::Int)
     !isinf(node.ub) && return
     node.status != MOI.OPTIMAL && return 
     m = tree.root
-    vids = MOI.get(m ,MOI.ListOfVariableIndices())
-    vars = VariableRef.(m, vids)
-    # first variable which is not discrete
 
+    var = VariableRef(m, MOI.VariableIndex(vidx))
+
+    # first variable which is not discrete
     lbs = copy(node.lbs)
     ubs = copy(node.ubs)
 
-    vx = value.(vars)
-    for (i,x) in enumerate(vx)
-        if !isapprox_discrete(x)
-            # left child set upper bound
-            ubs[i] = floor(Int, x)
+    val = JuMP.value(var)
 
-            BB.add_node!(tree, (
-                lbs = copy(node.lbs),
-                ubs = ubs,
-                status = MOI.OPTIMIZE_NOT_CALLED,
-            ))
+    # left child set upper bound
+    ubs[vidx] = floor(Int, val)
 
-            # left child set upper bound
-            lbs[i] = ceil(Int, x)
+    BB.add_node!(tree, (
+        lbs = copy(node.lbs),
+        ubs = ubs,
+        status = MOI.OPTIMIZE_NOT_CALLED,
+    ))
 
-            BB.add_node!(tree, (
-                lbs = lbs,
-                ubs = copy(node.ubs),
-                status = MOI.OPTIMIZE_NOT_CALLED,
-            ))
-            break
-        end
-    end
+    # right child set lower bound
+    lbs[vidx] = ceil(Int, val)
+
+    BB.add_node!(tree, (
+        lbs = lbs,
+        ubs = copy(node.ubs),
+        status = MOI.OPTIMIZE_NOT_CALLED,
+    ))
 end
 
 @testset "MIP Problem with 3 variables" begin

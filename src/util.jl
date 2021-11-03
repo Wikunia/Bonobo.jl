@@ -25,6 +25,10 @@ end
     end
 end
 
-function isapprox_discrete(val; atol=1e-6, rtol=1e-6)
+function is_approx_discrete(tree::BnBTree, val)
+    return is_approx_discrete(val; atol=tree.options.atol, rtol=tree.options.rtol)
+end
+
+function is_approx_discrete(val; atol=1e-6, rtol=1e-6)
     return isapprox(val, round(val); atol, rtol)
 end
