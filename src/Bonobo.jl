@@ -205,7 +205,7 @@ while !terminated(tree) # as long as there are open nodes
     # remove the current node
     close_node!(tree, node)
     # needs to be implemented by you
-    # create branches from the current node
+    # calls get_branching_variable and branch_on_variable! the latter must be implemented by you
     branch!(tree, node)
 end
 ```
