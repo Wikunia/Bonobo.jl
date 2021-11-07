@@ -26,14 +26,25 @@ end
 end
 
 """
-    is_approx_discrete(tree::BnBTree, value)
+    is_approx_feasible(tree::BnBTree, value)
 
-Return whether a given `value` is approximately discrete based on the tolerances defined in the tree options. 
+Return whether a given `value` is approximately feasible based on the tolerances defined in the tree options. 
 """
-function is_approx_discrete(tree::BnBTree, val)
-    return is_approx_discrete(val; atol=tree.options.atol, rtol=tree.options.rtol)
+function is_approx_feasible(tree::BnBTree, value::Number)
+    return is_approx_feasible(value; atol=tree.options.atol, rtol=tree.options.rtol)
 end
 
-function is_approx_discrete(val; atol=1e-6, rtol=1e-6)
-    return isapprox(val, round(val); atol, rtol)
+function is_approx_feasible(value::Number; atol=1e-6, rtol=1e-6)
+    return isapprox(value, round(value); atol, rtol)
+end
+
+"""
+    get_distance_to_feasible(tree::BnBTree, value)
+
+Return the distance of feasibility for the given value.
+
+- if `value::Number` this returns the distance to the nearest discrete value
+"""
+function get_distance_to_feasible(tree::BnBTree, value::Number)
+    return abs(round(value)-value)
 end
