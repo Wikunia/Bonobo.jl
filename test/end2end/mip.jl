@@ -6,12 +6,24 @@ mutable struct MIPNode <: AbstractNode
     status :: MOI.TerminationStatusCode
 end
 
-BB.get_relaxed_values(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode) = value.(tree.root[:x])
+function BB.get_relaxed_values(tree::BnBTree{MIPNode, JuMP.Model}, node)
+    vids = MOI.get(tree.root ,MOI.ListOfVariableIndices())
+    vars = VariableRef.(tree.root, vids)
+    return JuMP.value.(vars)
+end
+
+function BB.get_discrete_indices(model::JuMP.Model)
+    # every variable should be discrete
+    vis = MOI.get(model, MOI.ListOfVariableIndices())
+    return 1:length(vis)
+end
 
 function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     m = tree.root
-    JuMP.set_lower_bound.(m[:x], node.lbs)
-    JuMP.set_upper_bound.(m[:x], node.ubs)
+    vids = MOI.get(m ,MOI.ListOfVariableIndices())
+    vars = VariableRef.(m, vids)
+    JuMP.set_lower_bound.(vars, node.lbs)
+    JuMP.set_upper_bound.(vars, node.ubs)
 
     optimize!(m)
     status = termination_status(m)
@@ -21,45 +33,43 @@ function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     end
 
     obj_val = objective_value(m)
-    if all(isapprox_discrete.(value.(m[:x])))
+    if all(BB.is_approx_discrete.(tree, value.(vars)))
         node.ub = obj_val
         return obj_val, obj_val
     end
     return obj_val, NaN
 end
 
-function BB.branch!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
-    !isinf(node.ub) && return
-    node.status != MOI.OPTIMAL && return 
+function BB.get_branching_nodes_info(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode, vidx::Int)
     m = tree.root
-    # first variable which is not discrete
+    node_info = NamedTuple[]
 
+    var = VariableRef(m, MOI.VariableIndex(vidx))
+
+    # first variable which is not discrete
     lbs = copy(node.lbs)
     ubs = copy(node.ubs)
 
-    vx = value.(m[:x])
-    for (i,x) in enumerate(vx)
-        if !isapprox_discrete(x)
-            # left child set upper bound
-            ubs[i] = floor(Int, x)
+    val = JuMP.value(var)
 
-            BB.add_node!(tree, (
-                lbs = copy(node.lbs),
-                ubs = ubs,
-                status = MOI.OPTIMIZE_NOT_CALLED,
-            ))
+    # left child set upper bound
+    ubs[vidx] = floor(Int, val)
 
-            # left child set upper bound
-            lbs[i] = ceil(Int, x)
+    push!(node_info, (
+        lbs = copy(node.lbs),
+        ubs = ubs,
+        status = MOI.OPTIMIZE_NOT_CALLED,
+    ))
 
-            BB.add_node!(tree, (
-                lbs = lbs,
-                ubs = copy(node.ubs),
-                status = MOI.OPTIMIZE_NOT_CALLED,
-            ))
-            break
-        end
-    end
+    # right child set lower bound
+    lbs[vidx] = ceil(Int, val)
+
+    push!(node_info, (
+        lbs = lbs,
+        ubs = copy(node.ubs),
+        status = MOI.OPTIMIZE_NOT_CALLED,
+    ))
+    return node_info
 end
 
 @testset "MIP Problem with 3 variables" begin
@@ -101,6 +111,7 @@ end
     @objective(m, Min, x[1]+1.2x[2]+3.2x[3])
 
     bnb_model = BB.initialize(; 
+        branch_strategy = BB.MOST_INFEASIBLE,
         Node = MIPNode,
         root = m,
         sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min

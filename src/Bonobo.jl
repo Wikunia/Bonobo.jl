@@ -78,6 +78,18 @@ which dispatches on the `traverse_strategy` argument.
 """
 abstract type AbstractTraverseStrategy end
 
+
+"""
+    AbstractBranchStrategy
+
+The abstract type for a branching strategy. 
+If you implement a new branching strategy, this must be the supertype. 
+
+If you want to implement your own strategy, you must implement a new method for [`get_branching_variable`](@ref)
+which dispatches on the `branch_strategy` argument. 
+"""
+abstract type AbstractBranchStrategy end
+
 """
     BFS <: AbstractTraverseStrategy
 
@@ -86,8 +98,25 @@ If there is a tie then the smallest node id is used as a tie breaker.
 """
 struct BFS <: AbstractTraverseStrategy end
 
+"""
+    FIRST <: AbstractBranchStrategy
+
+The `FIRST` strategy always picks the first variable with a fractional solution to branch on.
+"""
+struct FIRST <: AbstractBranchStrategy end
+
+"""
+    MOST_INFEASIBLE <: AbstractBranchStrategy
+
+The `MOST_INFEASIBLE` strategy always picks the variable which is furthest away from being discrete.
+"""
+struct MOST_INFEASIBLE <: AbstractBranchStrategy end
+
 mutable struct Options
     traverse_strategy   :: AbstractTraverseStrategy
+    branch_strategy     :: AbstractBranchStrategy
+    atol                :: Float64
+    rtol                :: Float64
 end
 
 """
@@ -101,13 +130,16 @@ mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{
     solutions::Vector{Solution}
     nodes::PriorityQueue{Int,Node}
     root::Root
+    discrete_indices::Vector{Int}
     num_nodes::Int
     sense::Symbol
     options::Options
 end
+Base.broadcastable(x::BnBTree) = Ref(x)
 
 include("util.jl")
 include("node.jl")
+include("branching.jl")
 
 """
     initialize(; kwargs...)
@@ -116,7 +148,10 @@ Initialize the branch and bound framework with the the following arguments.
 Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various methods.
 
 # Keyword arguments
-- `traverse_strategy` [`BFS`] currently the only supported traverse strategy is `BFS`. Should be an `AbstractTraverseStrategy`
+- `traverse_strategy` [`BFS`] currently the only supported traverse strategy is [`BFS`](@ref). Should be an [`AbstractTraverseStrategy`](@ref)
+- `branch_strategy` [`FIRST`] currently the only supported branching strategies are [`FIRST`](@ref) and [`MOST_INFEASIBLE`](@ref). Should be an [`AbstractBranchStrategy`](@ref)
+- `atol` [1e-6] the absolute tolerance to check whether a value is discrete
+- `rtol` [1e-6] the relative tolerance to check whether a value is discrete
 - `Node` [`DefaultNode`](@ref) can be special structure which is used to store all information about a node. 
     - needs to have `AbstractNode` as the super type
     - needs to have `std :: BnBNode` as a field (see [`BnBNode`](@ref))
@@ -129,6 +164,9 @@ Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 """
 function initialize(;
     traverse_strategy = BFS,
+    branch_strategy = FIRST,
+    atol = 1e-6,
+    rtol = 1e-6,
     Node = DefaultNode,
     Value = Vector{Float64},
     Solution = DefaultSolution{Node,Value},
@@ -141,11 +179,14 @@ function initialize(;
         Vector{Solution}(),
         PriorityQueue{Int,Node}(),
         root,
+        get_discrete_indices(root),
         0,
         sense,
-        Options(traverse_strategy())
+        Options(traverse_strategy(), branch_strategy(), atol, rtol)
     )
 end
+
+function get_discrete_indices end
 
 """
     optimize!(tree::BnBTree)
@@ -171,7 +212,7 @@ while !terminated(tree) # as long as there are open nodes
     # remove the current node
     close_node!(tree, node)
     # needs to be implemented by you
-    # create branches from the current node
+    # calls get_branching_variable and branch_on_variable! the latter must be implemented by you
     branch!(tree, node)
 end
 ```
@@ -278,8 +319,6 @@ function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,
     end
 end
 
-function branch! end
-
 """
     get_relaxed_values(tree::BnBTree, node::AbstractNode)
 
@@ -312,7 +351,7 @@ function get_objective_value(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:D
     end
 end
 
-export BnBTree, BnBNode, AbstractNode, AbstractSolution, isapprox_discrete
+export BnBTree, BnBNode, AbstractNode, AbstractSolution
 
 export AbstractTraverseStrategy
 
