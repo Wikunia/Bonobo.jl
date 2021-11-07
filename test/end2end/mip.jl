@@ -40,10 +40,9 @@ function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     return obj_val, NaN
 end
 
-function BB.branch_on_variable!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode, vidx::Int)
-    !isinf(node.ub) && return
-    node.status != MOI.OPTIMAL && return 
+function BB.get_branching_nodes_info(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode, vidx::Int)
     m = tree.root
+    node_info = NamedTuple[]
 
     var = VariableRef(m, MOI.VariableIndex(vidx))
 
@@ -56,7 +55,7 @@ function BB.branch_on_variable!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNod
     # left child set upper bound
     ubs[vidx] = floor(Int, val)
 
-    BB.add_node!(tree, (
+    push!(node_info, (
         lbs = copy(node.lbs),
         ubs = ubs,
         status = MOI.OPTIMIZE_NOT_CALLED,
@@ -65,11 +64,12 @@ function BB.branch_on_variable!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNod
     # right child set lower bound
     lbs[vidx] = ceil(Int, val)
 
-    BB.add_node!(tree, (
+    push!(node_info, (
         lbs = lbs,
         ubs = copy(node.ubs),
         status = MOI.OPTIMIZE_NOT_CALLED,
     ))
+    return node_info
 end
 
 @testset "MIP Problem with 3 variables" begin

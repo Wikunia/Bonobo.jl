@@ -1,11 +1,14 @@
 """
     branch!(tree, node)
 
-Get the branching variable with [`get_branching_variable`](@ref) and then calls [`branch_on_variable!`](@ref).
+Get the branching variable with [`get_branching_variable`](@ref) and then calls [`get_branching_nodes_info`](@ref) and [`add_node!`](@ref).
 """
 function branch!(tree, node)
-    variable = get_branching_variable(tree, tree.options.branch_strategy, node)
-    branch_on_variable!(tree, node, variable)
+    variable_idx = get_branching_variable(tree, tree.options.branch_strategy, node)
+    # no branching variable selected => return
+    variable_idx == -1 && return 
+    nodes_info = get_branching_nodes_info(tree, node, variable_idx)
+    add_node!.(tree, nodes_info)
 end
 
 """
@@ -13,6 +16,7 @@ end
 
 Return the first possible branching variable which should be discrete based on `tree.discrete_indices`
 and is currently not discrete based on [`is_approx_discrete`](@ref).
+Return `-1` if all integer constraints are respected.
 """
 function get_branching_variable(tree::BnBTree, ::FIRST, node::AbstractNode)
     values = get_relaxed_values(tree, node)
@@ -49,21 +53,22 @@ function get_branching_variable(tree::BnBTree, ::MOST_INFEASIBLE, node::Abstract
 end
 
 """
-    branch_on_variable!(tree::BnBTree, node::AbstractNode, vidx::Int)
+    get_branching_nodes_info(tree::BnBTree, node::AbstractNode, vidx::Int)
 
-Create new branching nodes based on the variable index `vidx`.
+Create the information for new branching nodes based on the variable index `vidx`.
+Return a list of those information as a `NamedTuple` vector.
 
 # Example
-A new node can be created with the [`add_node!`](@ref) function.
-
-The following would create a new node with the additional fields required by the [`AbstractNode`](@ref).
+The following would add the necessary information about a new node and return it. The necessary information are the fields required by the [`AbstractNode`](@ref).
 For this examle the required fields are the lower and upper bounds of the variables as well as the status of the node.
 ```julia
-Bonobo.add_node!(tree, (
+nodes_info = NamedTuple[]
+push!(nodes_info, (
     lbs = lbs,
     ubs = ubs,
     status = MOI.OPTIMIZE_NOT_CALLED,
 ))
+return nodes_info
 ```
 """
-function branch_on_variable! end
+function get_branching_nodes_info end
