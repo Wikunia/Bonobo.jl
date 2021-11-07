@@ -8,7 +8,9 @@ function branch!(tree, node)
     # no branching variable selected => return
     variable_idx == -1 && return 
     nodes_info = get_branching_nodes_info(tree, node, variable_idx)
-    add_node!.(tree, nodes_info)
+    for node_info in nodes_info
+        add_node!(tree, nodes_info)
+    end
 end
 
 """
