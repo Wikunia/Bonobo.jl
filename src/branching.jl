@@ -16,15 +16,15 @@ end
 """
     get_branching_variable(tree::BnBTree, ::FIRST, node::AbstractNode)
 
-Return the first possible branching variable which should be discrete based on `tree.discrete_indices`
-and is currently not discrete based on [`is_approx_discrete`](@ref).
+Return the first possible branching variable which is a branching variable based on `tree.branching_indices`
+and is currently not valid based on [`is_approx_feasible`](@ref).
 Return `-1` if all integer constraints are respected.
 """
 function get_branching_variable(tree::BnBTree, ::FIRST, node::AbstractNode)
     values = get_relaxed_values(tree, node)
-    for i in tree.discrete_indices
+    for i in tree.branching_indices
         value = values[i]
-        if !is_approx_discrete(tree, value)
+        if !is_approx_feasible(tree, value)
             return i
         end
     end
@@ -34,17 +34,17 @@ end
 """
     get_branching_variable(tree::BnBTree, ::MOST_INFEASIBLE, node::AbstractNode)
 
-Return the branching variable which is furthest away from being discrete
+Return the branching variable which is furthest away from being feasible based on [`get_distance_to_feasible`](@ref)
 or `-1` if all integer constraints are respected.
 """
 function get_branching_variable(tree::BnBTree, ::MOST_INFEASIBLE, node::AbstractNode)
     values = get_relaxed_values(tree, node)
     best_idx = -1
     max_distance_to_feasible = 0.0
-    for i in tree.discrete_indices
+    for i in tree.branching_indices
         value = values[i]
-        if !is_approx_discrete(tree, value)
-            distance_to_feasible = abs(round(value)-value)
+        if !is_approx_feasible(tree, value)
+            distance_to_feasible = get_distance_to_feasible(tree, value)
             if distance_to_feasible > max_distance_to_feasible
                 best_idx = i
                 max_distance_to_feasible = distance_to_feasible

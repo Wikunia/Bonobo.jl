@@ -101,14 +101,14 @@ struct BFS <: AbstractTraverseStrategy end
 """
     FIRST <: AbstractBranchStrategy
 
-The `FIRST` strategy always picks the first variable with a fractional solution to branch on.
+The `FIRST` strategy always picks the first variable which isn't fixed yet and can be branched on.
 """
 struct FIRST <: AbstractBranchStrategy end
 
 """
     MOST_INFEASIBLE <: AbstractBranchStrategy
 
-The `MOST_INFEASIBLE` strategy always picks the variable which is furthest away from being discrete.
+The `MOST_INFEASIBLE` strategy always picks the variable which is furthest away from being "fixed" and can be branched on.
 """
 struct MOST_INFEASIBLE <: AbstractBranchStrategy end
 
@@ -130,7 +130,7 @@ mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{
     solutions::Vector{Solution}
     nodes::PriorityQueue{Int,Node}
     root::Root
-    discrete_indices::Vector{Int}
+    branching_indices::Vector{Int}
     num_nodes::Int
     sense::Symbol
     options::Options
@@ -179,14 +179,14 @@ function initialize(;
         Vector{Solution}(),
         PriorityQueue{Int,Node}(),
         root,
-        get_discrete_indices(root),
+        get_branching_indices(root),
         0,
         sense,
         Options(traverse_strategy(), branch_strategy(), atol, rtol)
     )
 end
 
-function get_discrete_indices end
+function get_branching_indices end
 
 """
     optimize!(tree::BnBTree)

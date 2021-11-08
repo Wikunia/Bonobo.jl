@@ -12,7 +12,7 @@ function BB.get_relaxed_values(tree::BnBTree{MIPNode, JuMP.Model}, node)
     return JuMP.value.(vars)
 end
 
-function BB.get_discrete_indices(model::JuMP.Model)
+function BB.get_branching_indices(model::JuMP.Model)
     # every variable should be discrete
     vis = MOI.get(model, MOI.ListOfVariableIndices())
     return 1:length(vis)
@@ -33,7 +33,7 @@ function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     end
 
     obj_val = objective_value(m)
-    if all(BB.is_approx_discrete.(tree, value.(vars)))
+    if all(BB.is_approx_feasible.(tree, value.(vars)))
         node.ub = obj_val
         return obj_val, obj_val
     end
