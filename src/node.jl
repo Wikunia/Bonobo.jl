@@ -8,7 +8,7 @@ to the [`initialize`](@ref) method. (Besides the `std` field which is set by Bon
 If your node structure is the following:
 ```julia
 mutable struct MIPNode <: AbstractNode
-    std :: BnBNode
+    std :: BnBNodeInfo
     lbs :: Vector{Float64}
     ubs :: Vector{Float64}
     status :: MOI.TerminationStatusCode
@@ -48,7 +48,7 @@ Creates a node of type `Node` with id `node_id` and the named tuple `node_info`.
 For information on that see [`set_root!`](@ref).
 """
 function create_node(Node, node_id::Int, node_info::NamedTuple)
-    bnb_node = structfromnt(BnBNode, (id = node_id, lb = -Inf, ub = Inf))
+    bnb_node = structfromnt(BnBNodeInfo, (id = node_id, lb = -Inf, ub = Inf))
     bnb_nt = (std = bnb_node,)
     node_nt = merge(bnb_nt, node_info)
     return structfromnt(Node, node_nt)

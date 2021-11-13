@@ -20,10 +20,10 @@ It is parameterized by `Node` and `Value` where `Value` is the value which descr
 abstract type AbstractSolution{Node<:AbstractNode, Value} end
 
 """
-    BnBNode
+    BnBNodeInfo
 
 Holds the necessary information of every node.
-This needs to be added by every `AbstractNode` as `std::BnBNode`
+This needs to be added by every `AbstractNode` as `std::BnBNodeInfo`
 
 ```julia
 id :: Int
@@ -31,7 +31,7 @@ lb :: Float64
 ub :: Float64
 ```
 """
-mutable struct BnBNode
+mutable struct BnBNodeInfo
     id :: Int
     lb :: Float64 
     ub :: Float64
@@ -41,10 +41,10 @@ end
     DefaultNode <: AbstractNode
 
 The default structure for saving node information. 
-Currently this includes only the necessary `std::BnBNode` which needs to be part of every [`AbstractNode`](@ref).
+Currently this includes only the necessary `std::BnBNodeInfo` which needs to be part of every [`AbstractNode`](@ref).
 """
 mutable struct DefaultNode <: AbstractNode
-    std :: BnBNode
+    std :: BnBNodeInfo
 end
 
 """
@@ -135,6 +135,7 @@ mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{
     sense::Symbol
     options::Options
 end
+
 Base.broadcastable(x::BnBTree) = Ref(x)
 
 include("util.jl")
@@ -154,7 +155,7 @@ Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various method
 - `rtol` [1e-6] the relative tolerance to check whether a value is discrete
 - `Node` [`DefaultNode`](@ref) can be special structure which is used to store all information about a node. 
     - needs to have `AbstractNode` as the super type
-    - needs to have `std :: BnBNode` as a field (see [`BnBNode`](@ref))
+    - needs to have `std :: BnBNodeInfo` as a field (see [`BnBNodeInfo`](@ref))
 - `Solution` [`DefaultSolution`](@ref) stores the node and several other information about a solution
 - `root` [`nothing`] the information about the root problem. The type can be used for dispatching on types 
 - `sense` [`:Min`] can be `:Min` or `:Max` depending on the objective sense
@@ -186,6 +187,11 @@ function initialize(;
     )
 end
 
+"""
+    get_branching_indices(root)
+
+Return a vector of variables to branch on from the current root object.
+"""
 function get_branching_indices end
 
 """
@@ -193,31 +199,26 @@ function get_branching_indices end
 
 Optimize the problem using a branch and bound approach. 
 
-The steps are the following:
+The steps, repeated until terminated is true, are the following:
 ```julia
-while !terminated(tree) # as long as there are open nodes
-    # get the next open node depending on the traverse strategy
-    node = get_next_node(tree, tree.options.traverse_strategy) 
-    # needs to be implemented by you
-    # Should evaluate the current node and return the lower and upper bound
-    # if the problem is infeasible both values should be set to NaN
-    lb, ub = evaluate_node!(tree, node) 
-    # updates the upper and lower bound of the node struct
-    set_node_bound!(tree.sense, node, lb, ub)
+# 1. get the next open node depending on the traverse strategy
+node = get_next_node(tree, tree.options.traverse_strategy)
+# 2. evaluate the current node and return the lower and upper bound
+# if the problem is infeasible both values should be set to NaN
+lb, ub = evaluate_node!(tree, node)
+# 3. update the upper and lower bound of the node struct
+set_node_bound!(tree.sense, node, lb, ub)
 
-    # update the best solution 
-    updated = update_best_solution!(tree, node)
-    updated && bound!(tree, node.id)
-    
-    # remove the current node
-    close_node!(tree, node)
-    # needs to be implemented by you
-    # calls get_branching_variable and branch_on_variable! the latter must be implemented by you
-    branch!(tree, node)
-end
+# 4. update the best solution
+updated = update_best_solution!(tree, node)
+updated && bound!(tree, node.id)
+
+# 5. remove the current node
+close_node!(tree, node)
+# 6. compute the node children and adds them to the tree
+# internally calls get_branching_variable and branch_on_variable!
+branch!(tree, node)
 ```
-
-every function of the above can be overriden by your own method. 
 """
 function optimize!(tree::BnBTree)
     while !terminated(tree)
@@ -267,12 +268,12 @@ function set_node_bound!(objective_sense::Symbol, node::AbstractNode, lb, ub)
 end
 
 """
-    bound!(tree::BnBTree, current_node_id)
+    bound!(tree::BnBTree, current_node_id::Int)
 
 Close all nodes which have a lower bound higher or equal to the incumbent
 """
-function bound!(tree::BnBTree, current_node_id)
-    for (_,node) in tree.nodes
+function bound!(tree::BnBTree, current_node_id::Int)
+    for (_, node) in tree.nodes
         if node.id != current_node_id && node.lb >= tree.incumbent
             close_node!(tree, node)
         end
@@ -282,7 +283,7 @@ end
 """
     close_node!(tree::BnBTree, node::AbstractNode)
 
-Delete the node from the priority queue from the nodes
+Delete the node from the priority queue.
 """
 close_node!(tree::BnBTree, node::AbstractNode) = delete!(tree.nodes, node.id)
 
@@ -290,7 +291,7 @@ close_node!(tree::BnBTree, node::AbstractNode) = delete!(tree.nodes, node.id)
     update_best_solution!(tree::BnBTree, node::AbstractNode)
 
 Update the best solution when we found a better incumbent.
-Calls [`add_new_solution!`] if this is the case
+Calls [`add_new_solution!`] if this is the case, returns whether a solution was added.
 """
 function update_best_solution!(tree::BnBTree, node::AbstractNode)
     isinf(node.ub) && return false
@@ -351,7 +352,7 @@ function get_objective_value(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:D
     end
 end
 
-export BnBTree, BnBNode, AbstractNode, AbstractSolution
+export BnBTree, BnBNodeInfo, AbstractNode, AbstractSolution
 
 export AbstractTraverseStrategy
 

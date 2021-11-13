@@ -1,6 +1,6 @@
 
 mutable struct MIPNode <: AbstractNode
-    std :: BnBNode
+    std :: BnBNodeInfo
     lbs :: Vector{Float64}
     ubs :: Vector{Float64}
     status :: MOI.TerminationStatusCode
@@ -22,8 +22,22 @@ function BB.evaluate_node!(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode)
     m = tree.root
     vids = MOI.get(m ,MOI.ListOfVariableIndices())
     vars = VariableRef.(m, vids)
-    JuMP.set_lower_bound.(vars, node.lbs)
-    JuMP.set_upper_bound.(vars, node.ubs)
+    for vidx in eachindex(vars)
+        if isfinite(node.lbs[vidx])
+            JuMP.set_lower_bound(vars[vidx], node.lbs[vidx])
+        elseif node.lbs[vidx] == -Inf && JuMP.has_lower_bound(vars[vidx])
+            JuMP.delete_lower_bound(vars[vidx])
+        elseif node.lbs[vidx] == Inf # making problem infeasible
+            error("Invalid lower bound for variable $vidx: $(node.lbs[vidx])")
+        end
+        if isfinite(node.ubs[vidx])
+            JuMP.set_upper_bound(vars[vidx], node.ubs[vidx])
+        elseif node.ubs[vidx] == Inf && JuMP.has_upper_bound(vars[vidx])
+            JuMP.delete_upper_bound(vars[vidx])
+        elseif node.ubs[vidx] == -Inf # making problem infeasible
+            error("Invalid upper bound for variable $vidx: $(node.lbs[vidx])")
+        end
+    end
 
     optimize!(m)
     status = termination_status(m)
