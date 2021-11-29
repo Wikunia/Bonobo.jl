@@ -7,6 +7,10 @@ using Cbc
 const BB = Bonobo
     
 
-@testset "Bonobo.jl" begin
+@testset "End2End tests" begin
     include("end2end/mip.jl")
+end
+
+@testset "Unit tests" begin
+    include("unit/add_node.jl")
 end
