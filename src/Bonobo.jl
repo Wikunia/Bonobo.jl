@@ -231,6 +231,11 @@ function optimize!(tree::BnBTree)
         end
 
         set_node_bound!(tree.sense, node, lb, ub)
+        # if the evaluated lower bound is worse than the best incumbent -> close and continue
+        if node.lb >= tree.incumbent
+            close_node!(tree, node)
+            continue
+        end
 
         updated = update_best_solution!(tree, node)
         updated && bound!(tree, node.id)
