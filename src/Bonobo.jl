@@ -220,23 +220,31 @@ close_node!(tree, node)
 branch!(tree, node)
 ```
 """
-function optimize!(tree::BnBTree)
+function optimize!(tree::BnBTree; cb=(args...; kwargs...)->())
     while !terminated(tree)
         node = get_next_node(tree, tree.options.traverse_strategy)
         lb, ub = evaluate_node!(tree, node) 
         # if the problem was infeasible we simply close the node and continue
         if isnan(lb) && isnan(ub)
             close_node!(tree, node)
+            cb(tree, node; node_infeasible=true)
             continue
         end
 
         set_node_bound!(tree.sense, node, lb, ub)
+        # if the evaluated lower bound is worse than the best incumbent -> close and continue
+        if node.lb >= tree.incumbent
+            close_node!(tree, node)
+            cb(tree, node; worse_than_incumbent=true)
+            continue
+        end
 
         updated = update_best_solution!(tree, node)
         updated && bound!(tree, node.id)
 
         close_node!(tree, node)
         branch!(tree, node)
+        cb(tree, node)
     end
 end
 
