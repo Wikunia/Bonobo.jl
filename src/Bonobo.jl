@@ -175,8 +175,8 @@ function initialize(;
     sense = :Min,
 )
     return BnBTree{Node,typeof(root),Value,Solution}(
-        NaN, 
-        NaN,
+        Inf,
+        -Inf,
         Vector{Solution}(),
         PriorityQueue{Int,Node}(),
         root,
