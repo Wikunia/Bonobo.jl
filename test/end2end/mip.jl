@@ -186,6 +186,6 @@ end
         status = MOI.OPTIMIZE_NOT_CALLED
     ))
 
-    BB.optimize!(bnb_model; cb=callback_test)
+    BB.optimize!(bnb_model; callback=callback_test)
     @test nr_callback_checks_successful > 0
 end

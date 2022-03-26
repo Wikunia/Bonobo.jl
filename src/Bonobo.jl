@@ -195,7 +195,7 @@ Return a vector of variables to branch on from the current root object.
 function get_branching_indices end
 
 """
-    optimize!(tree::BnBTree)
+    optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
 
 Optimize the problem using a branch and bound approach. 
 
@@ -219,15 +219,21 @@ close_node!(tree, node)
 # internally calls get_branching_variable and branch_on_variable!
 branch!(tree, node)
 ```
+
+A `callback` function can be provided which will be called whenever a node is closed.
+It always has the arguments `tree` and `node` and is called after the `node` is closed. 
+In two cases an additional keyword argument (`kwarg`) is added:
+1. If the node is infeasible the kwarg `node_infeasible` is set to `true`.
+2. If the node has a higher lower bound than the incumbent the kwarg `worse_than_incumbent` is set to `true`.
 """
-function optimize!(tree::BnBTree; cb=(args...; kwargs...)->())
+function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
     while !terminated(tree)
         node = get_next_node(tree, tree.options.traverse_strategy)
         lb, ub = evaluate_node!(tree, node) 
         # if the problem was infeasible we simply close the node and continue
         if isnan(lb) && isnan(ub)
             close_node!(tree, node)
-            cb(tree, node; node_infeasible=true)
+            callback(tree, node; node_infeasible=true)
             continue
         end
 
@@ -235,7 +241,7 @@ function optimize!(tree::BnBTree; cb=(args...; kwargs...)->())
         # if the evaluated lower bound is worse than the best incumbent -> close and continue
         if node.lb >= tree.incumbent
             close_node!(tree, node)
-            cb(tree, node; worse_than_incumbent=true)
+            callback(tree, node; worse_than_incumbent=true)
             continue
         end
 
@@ -244,7 +250,7 @@ function optimize!(tree::BnBTree; cb=(args...; kwargs...)->())
 
         close_node!(tree, node)
         branch!(tree, node)
-        cb(tree, node)
+        callback(tree, node)
     end
 end
 
