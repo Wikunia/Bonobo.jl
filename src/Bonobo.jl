@@ -222,7 +222,8 @@ branch!(tree, node)
 
 A `callback` function can be provided which will be called whenever a node is closed.
 It always has the arguments `tree` and `node` and is called after the `node` is closed. 
-In two cases an additional keyword argument (`kwarg`) is added:
+Additionally the callback function **must** accept additional keyword arguments (`kwargs`) 
+which are set in the following ways:
 1. If the node is infeasible the kwarg `node_infeasible` is set to `true`.
 2. If the node has a higher lower bound than the incumbent the kwarg `worse_than_incumbent` is set to `true`.
 """
