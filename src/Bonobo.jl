@@ -123,12 +123,25 @@ end
     BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{Node,Value}}
 
 Holds all the information of the branch and bound tree. 
+
+```
+incumbent::Float64 - The best objective value found so far. Is stores as problem is a minimization problem
+lb::Float64        - The highest current lower bound 
+solutions::Vector{Solution} - A list of solutions
+node_queue::PriorityQueue{Int,Tuple{Float64, Int}} - A priority queue with key being the node id and the priority consists of the node lower bound and the node id.
+nodes::Dict{Int, Node}  - A dictionary of all nodes with key being the node id and value the actual node.
+root::Root      - The root node see [`set_root!`](@ref)
+branching_indices::Vector{Int} - The indices to be able to branch on used for [`get_branching_variable`](@ref)
+num_nodes::Int  - The number of nodes created in total
+sense::Symbol   - The objective sense: `:Max` or `:Min`.
+options::Options  - All options for the branch and bound tree. See [`Options`](@ref).
+```
 """
 mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{Node,Value}}
     incumbent::Float64
     lb::Float64
     solutions::Vector{Solution}
-    pq::PriorityQueue{Int,Tuple{Float64, Int}}
+    node_queue::PriorityQueue{Int,Tuple{Float64, Int}}
     nodes::Dict{Int, Node}
     root::Root
     branching_indices::Vector{Int}
@@ -241,8 +254,8 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         end
 
         set_node_bound!(tree.sense, node, lb, ub)
-        tree.pq[node.id] = (node.lb, node.id)
-        _ , prio = peek(tree.pq)
+        tree.node_queue[node.id] = (node.lb, node.id)
+        _ , prio = peek(tree.node_queue)
         @assert tree.lb <= prio[1]
         tree.lb = prio[1]
 
@@ -315,7 +328,7 @@ Delete the node from the nodes dictionary and the priority queue.
 """
 function close_node!(tree::BnBTree, node::AbstractNode) 
     delete!(tree.nodes, node.id)
-    delete!(tree.pq, node.id)
+    delete!(tree.node_queue, node.id)
 end
 
 """
