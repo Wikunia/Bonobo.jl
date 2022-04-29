@@ -128,7 +128,8 @@ mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{
     incumbent::Float64
     lb::Float64
     solutions::Vector{Solution}
-    nodes::PriorityQueue{Int,Node}
+    pq::PriorityQueue{Int,Tuple{Float64, Int}}
+    nodes::Dict{Int, Node}
     root::Root
     branching_indices::Vector{Int}
     num_nodes::Int
@@ -178,7 +179,8 @@ function initialize(;
         Inf,
         -Inf,
         Vector{Solution}(),
-        PriorityQueue{Int,Node}(),
+        PriorityQueue{Int,Tuple{Float64, Int}}(),
+        Dict{Int,Node}(),
         root,
         get_branching_indices(root),
         0,
@@ -239,6 +241,12 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         end
 
         set_node_bound!(tree.sense, node, lb, ub)
+        tree.pq[node.id] = (node.lb, node.id)
+        _ , prio = peek(tree.pq)
+        @assert tree.lb <= prio[1]
+        tree.lb = prio[1]
+
+
         # if the evaluated lower bound is worse than the best incumbent -> close and continue
         if node.lb >= tree.incumbent
             close_node!(tree, node)
@@ -247,7 +255,12 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         end
 
         updated = update_best_solution!(tree, node)
-        updated && bound!(tree, node.id)
+        if updated 
+            bound!(tree, node.id)
+            if isapprox(tree.incumbent, tree.lb; atol=tree.options.atol, rtol=tree.options.rtol)
+                break
+            end 
+        end
 
         close_node!(tree, node)
         branch!(tree, node)
@@ -274,10 +287,10 @@ function set_node_bound!(objective_sense::Symbol, node::AbstractNode, lb, ub)
         ub = Inf
     end
     if objective_sense == :Min
-        node.lb = lb
+        node.lb = max(lb, node.lb)
         node.ub = ub
     else
-        node.lb = -lb
+        node.lb = max(-lb, node.lb)
         node.ub = -ub
     end
 end
@@ -298,9 +311,12 @@ end
 """
     close_node!(tree::BnBTree, node::AbstractNode)
 
-Delete the node from the priority queue.
+Delete the node from the nodes dictionary and the priority queue.
 """
-close_node!(tree::BnBTree, node::AbstractNode) = delete!(tree.nodes, node.id)
+function close_node!(tree::BnBTree, node::AbstractNode) 
+    delete!(tree.nodes, node.id)
+    delete!(tree.pq, node.id)
+end
 
 """
     update_best_solution!(tree::BnBTree, node::AbstractNode)
