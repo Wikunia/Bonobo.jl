@@ -38,6 +38,7 @@ function add_node!(tree::BnBTree{Node}, parent::Union{AbstractNode, Nothing}, no
     node_id = tree.num_nodes + 1
     node = create_node(Node, node_id, parent, node_info)
     tree.nodes[node_id] = node
+    tree.node_queue[node_id] = (node.lb, node_id)
     tree.num_nodes += 1
 end
 
@@ -65,17 +66,8 @@ Get the next node of the tree which shall be evaluted next by [`evaluate_node!`]
 If you want to implement your own traversing strategy check out [`AbstractTraverseStrategy`](@ref).
 """
 function get_next_node(tree::BnBTree, travese_strategy::BFS)
-    _, node = peek(tree.nodes)
-    return node
-end
-
-function Base.isless(n1::AbstractNode, n2::AbstractNode)
-    if n1.lb < n2.lb
-        return true
-    elseif n1.lb == n2.lb
-        return n1.id < n2.id
-    end
-    return false
+    node_id, _ = peek(tree.node_queue)
+    return tree.nodes[node_id]
 end
 
 """
