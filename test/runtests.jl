@@ -8,6 +8,7 @@ const BB = Bonobo
     
 
 @testset "End2End tests" begin
+    include("end2end/dummy.jl")
     include("end2end/mip.jl")
 end
 
