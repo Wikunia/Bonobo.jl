@@ -2,7 +2,7 @@ using Bonobo
 using Test
 
 using JuMP
-using Cbc
+using HiGHS
 
 const BB = Bonobo
     
