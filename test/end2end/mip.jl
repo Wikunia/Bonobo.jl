@@ -87,8 +87,8 @@ function BB.get_branching_nodes_info(tree::BnBTree{MIPNode, JuMP.Model}, node::M
 end
 
 @testset "MIP Problem with 3 variables" begin
-    m = Model(Cbc.Optimizer)
-    set_optimizer_attribute(m, "logLevel", 0)
+    m = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(m, "log_to_console", false)
     @variable(m, x[1:3] >= 0)
     @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] <= 6.1)   
     @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] <= 8.1)   
@@ -116,8 +116,8 @@ end
 end
 
 @testset "MIP Problem with 3 variables minimize" begin
-    m = Model(Cbc.Optimizer)
-    set_optimizer_attribute(m, "logLevel", 0)
+    m = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(m, "log_to_console", false)
     @variable(m, x[1:3] >= 0)
     @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)   
     @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)   
