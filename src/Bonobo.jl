@@ -279,6 +279,16 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         branch!(tree, node)
         callback(tree, node)
     end
+    sort_solutions!(tree.solutions, tree.sense)
+end
+
+"""
+    sort_solutions!(solutions::Vector{<:AbstractSolution}, sense::Symbol)
+
+Sort the solutions vector by objective value such that the best solution is at index 1.
+"""
+function sort_solutions!(solutions::Vector{<:AbstractSolution}, sense::Symbol)
+    sort!(solutions; rev=:sense == :Max, by=s->s.objective) 
 end
 
 """
@@ -351,17 +361,12 @@ end
     add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
 
 Currently it changes the general solution itself by calling [`get_relaxed_values`](@ref) which needs to be implemented by you.
-# Todo: Add a possibility to store several solutions based on some options.
 
 This function needs to be implemented by you if you have a different type of Solution object than [`DefaultSolution`](@ref).
 """
 function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
     sol = DefaultSolution(node.ub, get_relaxed_values(tree, node), node)
-    if isempty(tree.solutions)
-        push!(tree.solutions, sol)
-    else
-        tree.solutions[1] = sol
-    end
+    push!(tree.solutions, sol)
 end
 
 """
@@ -395,6 +400,13 @@ function get_objective_value(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:D
         return tree.solutions[result].objective
     end
 end
+
+"""
+    get_num_solutions(tree::BnBTree)
+
+Return the number of solutions available.
+"""
+get_num_solutions(tree::BnBTree) = length(tree.solutions)
 
 export BnBTree, BnBNodeInfo, AbstractNode, AbstractSolution
 
