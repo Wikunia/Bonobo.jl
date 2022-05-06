@@ -96,7 +96,7 @@ end
     @objective(m, Max, x[1]+1.2x[2]+3.2x[3])
 
     bnb_model = BB.initialize(; 
-        traverse_strategy = BB.BFS,
+        traverse_strategy = BB.BFS(),
         Node = MIPNode,
         root = m,
         sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min
@@ -125,7 +125,7 @@ end
     @objective(m, Min, x[1]+1.2x[2]+3.2x[3])
 
     bnb_model = BB.initialize(; 
-        branch_strategy = BB.MOST_INFEASIBLE,
+        branch_strategy = BB.MOST_INFEASIBLE(),
         Node = MIPNode,
         root = m,
         sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min

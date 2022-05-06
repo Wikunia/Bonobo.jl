@@ -13,7 +13,7 @@ struct TestRoot end
     end
 
     bnb_model = BB.initialize(; 
-        branch_strategy = BB.MOST_INFEASIBLE,
+        branch_strategy = BB.MOST_INFEASIBLE(),
         root = TestRoot(),
         sense = :Min
     )
