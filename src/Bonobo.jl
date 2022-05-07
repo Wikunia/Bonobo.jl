@@ -304,6 +304,12 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
     tree.options.log_table && set_and_print_table_values!(table, tree, start_time, closed_nodes)
 end
 
+"""
+    set_and_print_table_values!(table, tree, start_time, closed_nodes)
+
+Set the values for the new table line and print it. Whether it's actually printed depends on whether it is changed compared to the previous line.
+This is decided by TableLogger.jl
+"""
 function set_and_print_table_values!(table, tree, start_time, closed_nodes)
     set_value!(table, :open_nodes, length(tree.nodes))
     set_value!(table, :closed_nodes, closed_nodes)
