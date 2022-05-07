@@ -178,8 +178,8 @@ Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various method
 Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 """
 function initialize(;
-    traverse_strategy = BFS,
-    branch_strategy = FIRST,
+    traverse_strategy = BFS(),
+    branch_strategy = FIRST(),
     atol = 1e-6,
     rtol = 1e-6,
     Node = DefaultNode,
@@ -198,7 +198,7 @@ function initialize(;
         get_branching_indices(root),
         0,
         sense,
-        Options(traverse_strategy(), branch_strategy(), atol, rtol)
+        Options(traverse_strategy, branch_strategy, atol, rtol)
     )
 end
 
@@ -410,6 +410,6 @@ get_num_solutions(tree::BnBTree) = length(tree.solutions)
 
 export BnBTree, BnBNodeInfo, AbstractNode, AbstractSolution
 
-export AbstractTraverseStrategy
+export AbstractTraverseStrategy, AbstractBranchStrategy
 
 end
