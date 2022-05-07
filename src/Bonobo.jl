@@ -2,6 +2,7 @@ module Bonobo
 
 using DataStructures
 using NamedTupleTools
+using TableLogger
 
 """
     AbstractNode
@@ -117,6 +118,7 @@ mutable struct Options
     branch_strategy     :: AbstractBranchStrategy
     atol                :: Float64
     rtol                :: Float64
+    log_table           :: Bool
 end
 
 """
@@ -187,6 +189,7 @@ function initialize(;
     Solution = DefaultSolution{Node,Value},
     root = nothing,
     sense = :Min,
+    log_table = true,
 )
     return BnBTree{Node,typeof(root),Value,Solution}(
         Inf,
@@ -198,7 +201,7 @@ function initialize(;
         get_branching_indices(root),
         0,
         sense,
-        Options(traverse_strategy, branch_strategy, atol, rtol)
+        Options(traverse_strategy, branch_strategy, atol, rtol, log_table)
     )
 end
 
@@ -243,12 +246,27 @@ which are set in the following ways:
 2. If the node has a higher lower bound than the incumbent the kwarg `worse_than_incumbent` is set to `true`.
 """
 function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
+    table = init_log_table(
+        (id=:open_nodes, name="#Open"),
+        (id=:closed_nodes, name="#Closed"),
+        (id=:incumbent, name="Incumbent", width=20),
+        (id=:best_bound, name="Best Bound", width=20),
+        (id=:gap, name="Gap", width=12),
+        (id=:time, name="Time [s]", width=10, alignment=:right);
+        width = 15,
+        alignment = :center
+    )
+    closed_nodes = 0
+    start_time = time()
+    tree.options.log_table && print_header(table)
+
     while !terminated(tree)
         node = get_next_node(tree, tree.options.traverse_strategy)
         lb, ub = evaluate_node!(tree, node) 
         # if the problem was infeasible we simply close the node and continue
         if isnan(lb) && isnan(ub)
             close_node!(tree, node)
+            closed_nodes += 1
             callback(tree, node; node_infeasible=true)
             continue
         end
@@ -263,11 +281,13 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         # if the evaluated lower bound is worse than the best incumbent -> close and continue
         if node.lb >= tree.incumbent
             close_node!(tree, node)
+            closed_nodes += 1
             callback(tree, node; worse_than_incumbent=true)
             continue
         end
 
         updated = update_best_solution!(tree, node)
+
         if updated 
             bound!(tree, node.id)
             if isapprox(tree.incumbent, tree.lb; atol=tree.options.atol, rtol=tree.options.rtol)
@@ -276,9 +296,37 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         end
 
         close_node!(tree, node)
+        closed_nodes += 1
         branch!(tree, node)
         callback(tree, node)
+        tree.options.log_table && set_and_print_table_values!(table, tree, start_time, closed_nodes)
     end
+    tree.options.log_table && set_and_print_table_values!(table, tree, start_time, closed_nodes)
+end
+
+function set_and_print_table_values!(table, tree, start_time, closed_nodes)
+    set_value!(table, :open_nodes, length(tree.nodes))
+    set_value!(table, :closed_nodes, closed_nodes)
+    table_incumbent = tree.sense == :Max ? -tree.incumbent : tree.incumbent
+    table_best_bound = tree.sense == :Max ? -tree.lb : tree.lb
+    if isinf(table_incumbent)
+        table_incumbent = "-"
+    end
+
+    set_value!(table, :incumbent, table_incumbent)
+    set_value!(table, :best_bound, table_best_bound)
+    gap = abs(tree.lb - tree.incumbent) / abs(tree.incumbent)
+    gap *= 100
+    gap = round(gap; digits=2)
+    if isnan(gap)
+        table_gap = "-"
+    else
+        table_gap = "$gap %"
+    end
+    set_value!(table, :gap, table_gap)
+    set_value!(table, :time, time()-start_time)
+
+    print_line(table)
 end
 
 """
