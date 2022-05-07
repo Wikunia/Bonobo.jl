@@ -35,8 +35,7 @@ end
 @testset "Dummy callback" begin
     bnb_model = BB.initialize(; 
         root = DummyRoot(),
-        sense = :Min,
-        log_table = false
+        sense = :Min
     )
    
     BB.set_root!(bnb_model, NamedTuple())

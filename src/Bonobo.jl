@@ -251,7 +251,7 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         (id=:closed_nodes, name="#Closed"),
         (id=:incumbent, name="Incumbent", width=20),
         (id=:best_bound, name="Best Bound", width=20),
-        (id=:gap, name="Gap", width=12),
+        (id=:gap, name="Gap", width=12, alignment=:right),
         (id=:time, name="Time [s]", width=10, alignment=:right);
         width = 15,
         alignment = :center
