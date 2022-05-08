@@ -254,18 +254,18 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         end
 
         set_node_bound!(tree.sense, node, lb, ub)
-        tree.node_queue[node.id] = (node.lb, node.id)
-        _ , prio = peek(tree.node_queue)
-        @assert tree.lb <= prio[1]
-        tree.lb = prio[1]
-
-
+       
         # if the evaluated lower bound is worse than the best incumbent -> close and continue
         if node.lb >= tree.incumbent
             close_node!(tree, node)
             callback(tree, node; worse_than_incumbent=true)
             continue
         end
+
+        tree.node_queue[node.id] = (node.lb, node.id)
+        _ , prio = peek(tree.node_queue)
+        @assert tree.lb <= prio[1]
+        tree.lb = prio[1]
 
         updated = update_best_solution!(tree, node)
         if updated 
