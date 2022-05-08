@@ -126,6 +126,7 @@ Holds all the information of the branch and bound tree.
 
 ```
 incumbent::Float64 - The best objective value found so far. Is stores as problem is a minimization problem
+incumbent_solution::Solution - The currently best solution object
 lb::Float64        - The highest current lower bound 
 solutions::Vector{Solution} - A list of solutions
 node_queue::PriorityQueue{Int,Tuple{Float64, Int}} - A priority queue with key being the node id and the priority consists of the node lower bound and the node id.
@@ -139,6 +140,7 @@ options::Options  - All options for the branch and bound tree. See [`Options`](@
 """
 mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{Node,Value}}
     incumbent::Float64
+    incumbent_solution::Union{Nothing,Solution}
     lb::Float64
     solutions::Vector{Solution}
     node_queue::PriorityQueue{Int,Tuple{Float64, Int}}
@@ -190,6 +192,7 @@ function initialize(;
 )
     return BnBTree{Node,typeof(root),Value,Solution}(
         Inf,
+        nothing,
         -Inf,
         Vector{Solution}(),
         PriorityQueue{Int,Tuple{Float64, Int}}(),
@@ -367,6 +370,9 @@ This function needs to be implemented by you if you have a different type of Sol
 function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
     sol = DefaultSolution(node.ub, get_relaxed_values(tree, node), node)
     push!(tree.solutions, sol)
+    if tree.incumbent_solution === nothing || sol.objective < tree.incumbent_solution.objective
+        tree.incumbent_solution = sol
+    end
 end
 
 """
