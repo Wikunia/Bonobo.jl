@@ -9,6 +9,9 @@ function BB.evaluate_node!(tree::BnBTree{BB.DefaultNode, DummyRoot}, node::BB.De
         lb = 1.0
         ub = 1.0
     end
+    if node.id == 1
+        ub = NaN
+    end
     return lb, ub
 end
 
@@ -24,6 +27,11 @@ function BB.get_branching_nodes_info(tree::BnBTree{BB.DefaultNode, DummyRoot}, n
 end
 
 function dummy_callback(tree, node; node_infeasible=false, worse_than_incumbent=false)
+    if node.id <= 2
+        @test !node_infeasible
+        @test !worse_than_incumbent
+        return
+    end
     if node.id % 2 == 0
         @test worse_than_incumbent
     else 
