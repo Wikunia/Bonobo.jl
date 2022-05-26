@@ -176,6 +176,7 @@ Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various method
 - `root` [`nothing`] the information about the root problem. The type can be used for dispatching on types 
 - `sense` [`:Min`] can be `:Min` or `:Max` depending on the objective sense
 - `Value` [`Vector{Float64}`] the type of a solution  
+- `log_table` [`true`] print a table about the current status including: incumbent, best bound and running time
 
 Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 """
