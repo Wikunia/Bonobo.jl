@@ -99,7 +99,8 @@ end
         traverse_strategy = BB.BFS(),
         Node = MIPNode,
         root = m,
-        sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min
+        sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min,
+        log_table = false
     )
     BB.set_root!(bnb_model, (
         lbs = zeros(length(x)),
@@ -128,7 +129,8 @@ end
         branch_strategy = BB.MOST_INFEASIBLE(),
         Node = MIPNode,
         root = m,
-        sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min
+        sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min,
+        log_table = false
     )
     BB.set_root!(bnb_model, (
         lbs = zeros(length(x)),

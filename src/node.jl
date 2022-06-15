@@ -74,5 +74,7 @@ end
     evaluate_node!(tree, node)
 
 Evaluate the current node and return the lower and upper bound of that node.
+Return `NaN` for the lower bound if the problem is infeasible 
+and `NaN` for the upper bound if no solution was found.
 """
 function evaluate_node! end
