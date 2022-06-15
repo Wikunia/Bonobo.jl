@@ -128,6 +128,7 @@ Holds all the information of the branch and bound tree.
 
 ```
 incumbent::Float64 - The best objective value found so far. Is stores as problem is a minimization problem
+incumbent_solution::Solution - The currently best solution object
 lb::Float64        - The highest current lower bound 
 solutions::Vector{Solution} - A list of solutions
 node_queue::PriorityQueue{Int,Tuple{Float64, Int}} - A priority queue with key being the node id and the priority consists of the node lower bound and the node id.
@@ -141,6 +142,7 @@ options::Options  - All options for the branch and bound tree. See [`Options`](@
 """
 mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{Node,Value}}
     incumbent::Float64
+    incumbent_solution::Union{Nothing,Solution}
     lb::Float64
     solutions::Vector{Solution}
     node_queue::PriorityQueue{Int,Tuple{Float64, Int}}
@@ -194,6 +196,7 @@ function initialize(;
 )
     return BnBTree{Node,typeof(root),Value,Solution}(
         Inf,
+        nothing,
         -Inf,
         Vector{Solution}(),
         PriorityQueue{Int,Tuple{Float64, Int}}(),
@@ -303,6 +306,7 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         tree.options.log_table && set_and_print_table_values!(table, tree, start_time, closed_nodes)
     end
     tree.options.log_table && set_and_print_table_values!(table, tree, start_time, closed_nodes)
+    sort_solutions!(tree.solutions, tree.sense)
 end
 
 """
@@ -334,6 +338,15 @@ function set_and_print_table_values!(table, tree, start_time, closed_nodes)
     set_value!(table, :time, time()-start_time)
 
     print_line(table)
+end
+
+"""
+    sort_solutions!(solutions::Vector{<:AbstractSolution}, sense::Symbol)
+
+Sort the solutions vector by objective value such that the best solution is at index 1.
+"""
+function sort_solutions!(solutions::Vector{<:AbstractSolution}, sense::Symbol)
+    sort!(solutions; rev=:sense == :Max, by=s->s.objective) 
 end
 
 """
@@ -406,16 +419,14 @@ end
     add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
 
 Currently it changes the general solution itself by calling [`get_relaxed_values`](@ref) which needs to be implemented by you.
-# Todo: Add a possibility to store several solutions based on some options.
 
 This function needs to be implemented by you if you have a different type of Solution object than [`DefaultSolution`](@ref).
 """
 function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
     sol = DefaultSolution(node.ub, get_relaxed_values(tree, node), node)
-    if isempty(tree.solutions)
-        push!(tree.solutions, sol)
-    else
-        tree.solutions[1] = sol
+    push!(tree.solutions, sol)
+    if tree.incumbent_solution === nothing || sol.objective < tree.incumbent_solution.objective
+        tree.incumbent_solution = sol
     end
 end
 
@@ -450,6 +461,13 @@ function get_objective_value(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:D
         return tree.solutions[result].objective
     end
 end
+
+"""
+    get_num_solutions(tree::BnBTree)
+
+Return the number of solutions available.
+"""
+get_num_solutions(tree::BnBTree) = length(tree.solutions)
 
 export BnBTree, BnBNodeInfo, AbstractNode, AbstractSolution
 
