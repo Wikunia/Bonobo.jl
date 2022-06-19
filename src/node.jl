@@ -25,38 +25,37 @@ Bonobo.set_root!(tree, (
 ))
 ```
 """
-function set_root!(tree::BnBTree, node_info::NamedTuple)
-    add_node!(tree, nothing, node_info)
+function set_root!(tree::BnBTree, node::AbstractNode)
+    add_node!(tree, nothing, node)
 end
 
 """
-    add_node!(tree::BnBTree{Node}, parent::Union{AbstractNode, Nothing}, node_info::NamedTuple)
+    add_node!(tree::BnBTree{Node}, parent::Union{Node, Nothing}, node::Node) where Node <: AbstractNode
 
-Add a new node to the tree using the `node_info`. For information on that see [`set_root!`](@ref).
+Add a new node to the tree using the `node`. For information on that see [`set_root!`](@ref).
 """
-function add_node!(tree::BnBTree{Node}, parent::Union{AbstractNode, Nothing}, node_info::NamedTuple) where Node <: AbstractNode
+function add_node!(tree::BnBTree{Node}, parent::Union{Node, Nothing}, node::Node) where Node <: AbstractNode
     node_id = tree.num_nodes + 1
-    node = create_node(Node, node_id, parent, node_info)
+    node = create_node(Node, node_id, parent, node)
     tree.nodes[node_id] = node
     tree.node_queue[node_id] = (node.lb, node_id)
     tree.num_nodes += 1
 end
 
 """
-    create_node(Node, node_id::Int, parent::Union{AbstractNode, Nothing}, node_info::NamedTuple)
+    create_node(Node, node_id::Int, parent::Union{AbstractNode, Nothing}, node::AbstractNode)
 
-Creates a node of type `Node` with id `node_id` and the named tuple `node_info`. 
+Creates a node of type `Node` with id `node_id` and the named tuple `node`. 
 For information on that see [`set_root!`](@ref).
 """
-function create_node(Node, node_id::Int, parent::Union{AbstractNode, Nothing}, node_info::NamedTuple)
+function create_node(Node, node_id::Int, parent::Union{AbstractNode, Nothing}, node::AbstractNode)
     lb = -Inf
     if !isnothing(parent)
         lb = parent.lb
     end
-    bnb_node = structfromnt(BnBNodeInfo, (id = node_id, lb = lb, ub = Inf))
-    bnb_nt = (std = bnb_node,)
-    node_nt = merge(bnb_nt, node_info)
-    return structfromnt(Node, node_nt)
+    bnb_node = BnBNodeInfo(node_id, lb, Inf)
+    node.std = bnb_node 
+    return node
 end
 
 """

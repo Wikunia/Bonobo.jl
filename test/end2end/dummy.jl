@@ -17,10 +17,7 @@ function BB.get_relaxed_values(::BnBTree{BB.DefaultNode, DummyRoot}, node::BB.De
 end
 
 function BB.get_branching_nodes_info(tree::BnBTree{BB.DefaultNode, DummyRoot}, node::BB.DefaultNode, vidx::Int)
-    node_info = NamedTuple[]
-    push!(node_info, NamedTuple())
-    push!(node_info, NamedTuple())
-    return node_info
+    return [BB.DefaultNode(), BB.DefaultNode()]
 end
 
 function dummy_callback(tree, node; node_infeasible=false, worse_than_incumbent=false)
@@ -38,7 +35,7 @@ end
         sense = :Min
     )
    
-    BB.set_root!(bnb_model, NamedTuple())
+    BB.set_root!(bnb_model, BB.DefaultNode())
 
     BB.optimize!(bnb_model; callback=dummy_callback)
 

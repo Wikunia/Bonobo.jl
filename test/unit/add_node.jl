@@ -17,13 +17,13 @@ struct TestRoot end
         root = TestRoot(),
         sense = :Min
     )
-    BB.set_root!(bnb_model, NamedTuple())
+    BB.set_root!(bnb_model, BB.DefaultNode())
     root = BB.get_next_node(bnb_model, BB.BFS())
     lb, ub = BB.evaluate_node!(bnb_model, root)
     BB.set_node_bound!(bnb_model.sense, root, lb, ub)
 
     # adding a new node with the root as parent
-    BB.add_node!(bnb_model, root, NamedTuple())
+    BB.add_node!(bnb_model, root, BB.DefaultNode())
     last_node_id = bnb_model.num_nodes
     @test bnb_model.nodes[last_node_id].lb == 0.0
 end

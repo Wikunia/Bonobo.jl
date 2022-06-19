@@ -56,7 +56,7 @@ end
 
 function BB.get_branching_nodes_info(tree::BnBTree{MIPNode, JuMP.Model}, node::MIPNode, vidx::Int)
     m = tree.root
-    node_info = NamedTuple[]
+    branches = MIPNode[]
 
     var = VariableRef(m, MOI.VariableIndex(vidx))
 
@@ -69,21 +69,21 @@ function BB.get_branching_nodes_info(tree::BnBTree{MIPNode, JuMP.Model}, node::M
     # left child set upper bound
     ubs[vidx] = floor(Int, val)
 
-    push!(node_info, (
-        lbs = copy(node.lbs),
-        ubs = ubs,
-        status = MOI.OPTIMIZE_NOT_CALLED,
+    push!(branches, MIPNode(
+        copy(node.lbs),
+        ubs,
+        MOI.OPTIMIZE_NOT_CALLED,
     ))
 
     # right child set lower bound
     lbs[vidx] = ceil(Int, val)
 
-    push!(node_info, (
-        lbs = lbs,
-        ubs = copy(node.ubs),
-        status = MOI.OPTIMIZE_NOT_CALLED,
+    push!(branches, MIPNode(
+        lbs,
+        copy(node.ubs),
+        MOI.OPTIMIZE_NOT_CALLED,
     ))
-    return node_info
+    return branches
 end
 
 @testset "MIP Problem with 3 variables" begin
@@ -101,10 +101,10 @@ end
         root = m,
         sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min
     )
-    BB.set_root!(bnb_model, (
-        lbs = zeros(length(x)),
-        ubs = fill(Inf, length(x)),
-        status = MOI.OPTIMIZE_NOT_CALLED
+    BB.set_root!(bnb_model, MIPNode(
+        zeros(length(x)),
+        fill(Inf, length(x)),
+        MOI.OPTIMIZE_NOT_CALLED
     ))
 
     BB.optimize!(bnb_model)
@@ -130,10 +130,10 @@ end
         root = m,
         sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min
     )
-    BB.set_root!(bnb_model, (
-        lbs = zeros(length(x)),
-        ubs = fill(Inf, length(x)),
-        status = MOI.OPTIMIZE_NOT_CALLED
+    BB.set_root!(bnb_model, MIPNode(
+        zeros(length(x)),
+        fill(Inf, length(x)),
+        MOI.OPTIMIZE_NOT_CALLED
     ))
 
     BB.optimize!(bnb_model)
