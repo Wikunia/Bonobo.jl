@@ -1,7 +1,6 @@
 module Bonobo
 
 using DataStructures
-using NamedTupleTools
 
 """
     AbstractNode
@@ -37,6 +36,8 @@ mutable struct BnBNodeInfo
     ub :: Float64
 end
 
+BnBNodeInfo() = BnBNodeInfo(-1, NaN, NaN)
+
 """
     DefaultNode <: AbstractNode
 
@@ -45,6 +46,10 @@ Currently this includes only the necessary `std::BnBNodeInfo` which needs to be 
 """
 mutable struct DefaultNode <: AbstractNode
     std :: BnBNodeInfo
+end
+
+function (::Type{AN})(args...) where {AN <: AbstractNode}
+    AN(BnBNodeInfo(), args...)
 end
 
 """

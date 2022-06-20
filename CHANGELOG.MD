@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased and breaking
+- Removed NamedTupleTools add node directly
+
 ## Unreleased
 - Store all solutions
 
