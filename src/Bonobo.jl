@@ -48,7 +48,7 @@ mutable struct DefaultNode <: AbstractNode
     std :: BnBNodeInfo
 end
 
-function (::Type{AN})(args...) where AN
+function (::Type{AN})(args...) where {AN <: AbstractNode}
     AN(BnBNodeInfo(), args...)
 end
 
