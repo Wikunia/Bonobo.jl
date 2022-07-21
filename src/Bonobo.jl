@@ -299,8 +299,9 @@ end
 """
     terminated(tree::BnBTree)
 
-Return true when the branch and bound loop in [`optimize!`](@ref) should be terminated.
-Default behavior is to terminate the loop only when no nodes exist in the priority queue.
+Return true when the branch-and-bound loop in [`optimize!`](@ref) should be terminated.
+Default behavior is to terminate the loop only when no nodes exist in the priority queue
+or when the relative duality gap is below the tolerance fixed in the options.
 """
 function terminated(tree::BnBTree)
     dual_gap = if signbit(tree.incumbent) != signbit(tree.lb)
