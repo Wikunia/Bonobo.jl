@@ -190,6 +190,7 @@ function initialize(;
     Solution = DefaultSolution{Node,Value},
     root = nothing,
     sense = :Min,
+    dual_gap_limit = 1e-5,
 )
     return BnBTree{Node,typeof(root),Value,Solution}(
         Inf,
@@ -202,7 +203,7 @@ function initialize(;
         get_branching_indices(root),
         0,
         sense,
-        Options(traverse_strategy, branch_strategy, atol, rtol)
+        Options(traverse_strategy, branch_strategy, atol, rtol, dual_gap_limit)
     )
 end
 
