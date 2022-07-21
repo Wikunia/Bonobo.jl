@@ -118,6 +118,7 @@ mutable struct Options
     atol                :: Float64
     rtol                :: Float64
     dual_gap_limit      :: Float64
+    abs_gap_limit       :: Float64
 end
 
 """
@@ -191,6 +192,7 @@ function initialize(;
     root = nothing,
     sense = :Min,
     dual_gap_limit = 1e-5,
+    abs_gap_limit = 1e-5,
 )
     return BnBTree{Node,typeof(root),Value,Solution}(
         Inf,
@@ -203,7 +205,7 @@ function initialize(;
         get_branching_indices(root),
         0,
         sense,
-        Options(traverse_strategy, branch_strategy, atol, rtol, dual_gap_limit)
+        Options(traverse_strategy, branch_strategy, atol, rtol, dual_gap_limit, abs_gap_limit)
     )
 end
 
@@ -301,17 +303,18 @@ end
 
 Return true when the branch-and-bound loop in [`optimize!`](@ref) should be terminated.
 Default behavior is to terminate the loop only when no nodes exist in the priority queue
-or when the relative duality gap is below the tolerance fixed in the options.
+or when the relative or absolute duality gap are below the tolerances fixed in the options.
 """
 function terminated(tree::BnBTree)
+    absgap = tree.incumbent - tree.lb
     dual_gap = if signbit(tree.incumbent) != signbit(tree.lb)
         Inf
     elseif tree.incumbent == tree.lb
         0.0
     else
-        (tree.incumbent - tree.lb) / min(abs(tree.incumbent), abs(tree.lb))
+        absgap / min(abs(tree.incumbent), abs(tree.lb))
     end
-    return isempty(tree.nodes) || dual_gap ≤ tree.options.dual_gap_limit
+    return isempty(tree.nodes) || dual_gap ≤ tree.options.dual_gap_limit || absgap ≤ tree.options.abs_gap_limit
 end
 
 """
