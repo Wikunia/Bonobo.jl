@@ -117,6 +117,7 @@ mutable struct Options
     branch_strategy     :: AbstractBranchStrategy
     atol                :: Float64
     rtol                :: Float64
+    dual_gap_limit      :: Float64
 end
 
 """
@@ -300,7 +301,10 @@ end
 Return true when the branch and bound loop in [`optimize!`](@ref) should be terminated.
 Default behavior is to terminate the loop only when no nodes exist in the priority queue.
 """
-terminated(tree::BnBTree) = isempty(tree.nodes)
+function terminated(tree::BnBTree)
+    dual_gap = tree.incumbent - tree.lb
+    return isempty(tree.nodes) || dual_gap ≤ tree.options.dual_gap_limit
+end
 
 """
     set_node_bound!(objective_sense::Symbol, node::AbstractNode, lb, ub)
