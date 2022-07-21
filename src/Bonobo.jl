@@ -303,7 +303,13 @@ Return true when the branch and bound loop in [`optimize!`](@ref) should be term
 Default behavior is to terminate the loop only when no nodes exist in the priority queue.
 """
 function terminated(tree::BnBTree)
-    dual_gap = tree.incumbent - tree.lb
+    dual_gap = if signbit(tree.incumbent) != signbit(tree.lb)
+        Inf
+    elseif tree.incumbent == tree.lb
+        0.0
+    else
+        (tree.incumbent - tree.lb) / min(abs(tree.incumbent), abs(tree.lb))
+    end
     return isempty(tree.nodes) || dual_gap ≤ tree.options.dual_gap_limit
 end
 
