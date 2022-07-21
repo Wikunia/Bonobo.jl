@@ -44,4 +44,7 @@ end
 
     @test -0.9 ≈ BB.get_solution(bnb_model)[1]
     @test BB.get_objective_value(bnb_model) ≈ -0.9
+
+    @test BB.get_num_solutions(bnb_model) > 1
+    @test BB.get_objective_value(bnb_model; result=2) >  BB.get_objective_value(bnb_model; result=1)
 end
