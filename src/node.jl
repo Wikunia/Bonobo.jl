@@ -37,9 +37,12 @@ Add a new node to the tree using the `node_info`. For information on that see [`
 function add_node!(tree::BnBTree{Node}, parent::Union{AbstractNode, Nothing}, node_info::NamedTuple) where Node <: AbstractNode
     node_id = tree.num_nodes + 1
     node = create_node(Node, node_id, parent, node_info)
-    tree.nodes[node_id] = node
-    tree.node_queue[node_id] = (node.lb, node_id)
-    tree.num_nodes += 1
+    # only add the node if it's better than the current best solution
+    if node.lb < tree.incumbent
+        tree.nodes[node_id] = node
+        tree.node_queue[node_id] = (node.lb, node_id)
+        tree.num_nodes += 1
+    end
 end
 
 """
