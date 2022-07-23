@@ -26,18 +26,18 @@ end
 function dummy_callback(tree, node; node_infeasible=false, worse_than_incumbent=false)
     if node.id % 2 == 0
         @test worse_than_incumbent
-    else 
+    else
         @test !worse_than_incumbent
     end
     @test !node_infeasible
 end
 
 @testset "Dummy callback" begin
-    bnb_model = BB.initialize(; 
+    bnb_model = BB.initialize(;
         root = DummyRoot(),
         sense = :Min
     )
-   
+
     BB.set_root!(bnb_model, NamedTuple())
 
     BB.optimize!(bnb_model; callback=dummy_callback)

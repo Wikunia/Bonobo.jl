@@ -90,12 +90,12 @@ end
     m = Model(HiGHS.Optimizer)
     set_optimizer_attribute(m, "log_to_console", false)
     @variable(m, x[1:3] >= 0)
-    @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] <= 6.1)   
-    @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] <= 8.1)   
-    @constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] <= 10.5)   
+    @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] <= 6.1)
+    @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] <= 8.1)
+    @constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] <= 10.5)
     @objective(m, Max, x[1]+1.2x[2]+3.2x[3])
 
-    bnb_model = BB.initialize(; 
+    bnb_model = BB.initialize(;
         traverse_strategy = BB.BFS(),
         Node = MIPNode,
         root = m,
@@ -119,12 +119,12 @@ end
     m = Model(HiGHS.Optimizer)
     set_optimizer_attribute(m, "log_to_console", false)
     @variable(m, x[1:3] >= 0)
-    @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)   
-    @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)   
-    @constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] >= 10.5)   
+    @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)
+    @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)
+    @constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] >= 10.5)
     @objective(m, Min, x[1]+1.2x[2]+3.2x[3])
 
-    bnb_model = BB.initialize(; 
+    bnb_model = BB.initialize(;
         branch_strategy = BB.MOST_INFEASIBLE(),
         Node = MIPNode,
         root = m,
@@ -142,4 +142,35 @@ end
 
     @test sol_x ≈ [6.0,1.0,0.0]
     @test BB.get_objective_value(bnb_model) ≈ 7.2
+end
+
+@testset "MIP problem absolute and relative gaps" begin
+    m = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(m, "log_to_console", false)
+    @variable(m, x[1:5] >= 0)
+    @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)
+    @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)
+    @constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] >= 10.5)
+    @constraint(m, x[4] + x[5] ≤ 3.5)
+    @objective(m, Min, x[1] + 1.2x[2] + 3.2x[3] - x[4] - 1.1 * x[5])
+    abs_gap_limit = 1e-2
+    bnb_model = BB.initialize(;
+        branch_strategy = BB.MOST_INFEASIBLE(),
+        Node = MIPNode,
+        root = m,
+        sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min,
+        dual_gap_limit = 1e-5,
+        abs_gap_limit = abs_gap_limit,
+    )
+    BB.set_root!(bnb_model, (
+        lbs = zeros(length(x)),
+        ubs = fill(Inf, length(x)),
+        status = MOI.OPTIMIZE_NOT_CALLED
+    ))
+
+    BB.optimize!(bnb_model)
+
+    sol_x = BB.get_solution(bnb_model)
+
+    @test BB.get_objective_value(bnb_model) ≤ 3.9 + abs_gap_limit
 end
