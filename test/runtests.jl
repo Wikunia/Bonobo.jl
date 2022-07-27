@@ -5,7 +5,7 @@ using JuMP
 using HiGHS
 
 const BB = Bonobo
-    
+
 
 @testset "End2End tests" begin
     include("end2end/dummy.jl")

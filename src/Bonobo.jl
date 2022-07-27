@@ -27,20 +27,20 @@ This needs to be added by every `AbstractNode` as `std::BnBNodeInfo`
 
 ```julia
 id :: Int
-lb :: Float64 
+lb :: Float64
 ub :: Float64
 ```
 """
 mutable struct BnBNodeInfo
     id :: Int
-    lb :: Float64 
+    lb :: Float64
     ub :: Float64
 end
 
 """
     DefaultNode <: AbstractNode
 
-The default structure for saving node information. 
+The default structure for saving node information.
 Currently this includes only the necessary `std::BnBNodeInfo` which needs to be part of every [`AbstractNode`](@ref).
 """
 mutable struct DefaultNode <: AbstractNode
@@ -51,15 +51,15 @@ end
     DefaultSolution{Node<:AbstractNode,Value} <: AbstractSolution{Node, Value}
 
 The default struct to save a solution of the branch and bound run.
-It holds 
+It holds
 ```julia
 objective :: Float64
-solution  :: Value 
+solution  :: Value
 node      :: Node
 ```
 Both the `Value` and the `Node` type are determined by the [`initialize`](@ref) method.
 
-`solution` holds the information to obtain the solution for example the values of all variables. 
+`solution` holds the information to obtain the solution for example the values of all variables.
 """
 mutable struct DefaultSolution{Node<:AbstractNode,Value} <: AbstractSolution{Node, Value}
     objective :: Float64
@@ -117,6 +117,8 @@ mutable struct Options
     branch_strategy     :: AbstractBranchStrategy
     atol                :: Float64
     rtol                :: Float64
+    dual_gap_limit      :: Float64
+    abs_gap_limit       :: Float64
 end
 
 """
@@ -189,6 +191,8 @@ function initialize(;
     Solution = DefaultSolution{Node,Value},
     root = nothing,
     sense = :Min,
+    dual_gap_limit = 1e-5,
+    abs_gap_limit = 1e-5,
 )
     return BnBTree{Node,typeof(root),Value,Solution}(
         Inf,
@@ -201,7 +205,7 @@ function initialize(;
         get_branching_indices(root),
         0,
         sense,
-        Options(traverse_strategy, branch_strategy, atol, rtol)
+        Options(traverse_strategy, branch_strategy, atol, rtol, dual_gap_limit, abs_gap_limit)
     )
 end
 
@@ -248,7 +252,7 @@ which are set in the following ways:
 function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
     while !terminated(tree)
         node = get_next_node(tree, tree.options.traverse_strategy)
-        lb, ub = evaluate_node!(tree, node) 
+        lb, ub = evaluate_node!(tree, node)
         # if the problem was infeasible we simply close the node and continue
         if isnan(lb) && isnan(ub)
             close_node!(tree, node)
@@ -271,11 +275,11 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         tree.lb = prio[1]
 
         updated = update_best_solution!(tree, node)
-        if updated 
+        if updated
             bound!(tree, node.id)
             if isapprox(tree.incumbent, tree.lb; atol=tree.options.atol, rtol=tree.options.rtol)
                 break
-            end 
+            end
         end
 
         close_node!(tree, node)
@@ -291,16 +295,30 @@ end
 Sort the solutions vector by objective value such that the best solution is at index 1.
 """
 function sort_solutions!(solutions::Vector{<:AbstractSolution}, sense::Symbol)
-    sort!(solutions; rev=:sense == :Max, by=s->s.objective) 
+    sort!(solutions; rev = sense == :Max, by=s->s.objective)
 end
 
 """
     terminated(tree::BnBTree)
 
-Return true when the branch and bound loop in [`optimize!`](@ref) should be terminated.
-Default behavior is to terminate the loop only when no nodes exist in the priority queue.
+Return true when the branch-and-bound loop in [`optimize!`](@ref) should be terminated.
+Default behavior is to terminate the loop only when no nodes exist in the priority queue
+or when the relative or absolute duality gap are below the tolerances fixed in the options.
 """
-terminated(tree::BnBTree) = isempty(tree.nodes)
+function terminated(tree::BnBTree)
+    absgap = tree.incumbent - tree.lb
+    if absgap ≤ tree.options.abs_gap_limit
+        return true
+    end
+    dual_gap = if signbit(tree.incumbent) != signbit(tree.lb)
+        Inf
+    elseif tree.incumbent == tree.lb
+        0.0
+    else
+        absgap / min(abs(tree.incumbent), abs(tree.lb))
+    end
+    return isempty(tree.nodes) || dual_gap ≤ tree.options.dual_gap_limit
+end
 
 """
     set_node_bound!(objective_sense::Symbol, node::AbstractNode, lb, ub)
@@ -339,7 +357,7 @@ end
 
 Delete the node from the nodes dictionary and the priority queue.
 """
-function close_node!(tree::BnBTree, node::AbstractNode) 
+function close_node!(tree::BnBTree, node::AbstractNode)
     delete!(tree.nodes, node.id)
     delete!(tree.node_queue, node.id)
 end

@@ -3,7 +3,7 @@ struct TestRoot end
 #=
     Test that adding a new node inherits the lower bound from its parent
 =#
-@testset "Adding node after evaluating root node" begin 
+@testset "Adding node after evaluating root node" begin
     function BB.get_branching_indices(tree::TestRoot)
         return [1]
     end
@@ -12,7 +12,7 @@ struct TestRoot end
         return 0.0, Inf
     end
 
-    bnb_model = BB.initialize(; 
+    bnb_model = BB.initialize(;
         branch_strategy = BB.MOST_INFEASIBLE(),
         root = TestRoot(),
         sense = :Min

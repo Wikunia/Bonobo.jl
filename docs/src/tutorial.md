@@ -22,16 +22,16 @@ A standard LP model:
 m = Model(HiGHS.Optimizer)
 set_optimizer_attribute(m, "log_to_console", false)
 @variable(m, x[1:3] >= 0)
-@constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)   
-@constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)   
-@constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] >= 10.5)   
+@constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)
+@constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)
+@constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] >= 10.5)
 @objective(m, Min, x[1]+1.2x[2]+3.2x[3])
 ```
 
 Now we need to initialize the branch and bound solver:
 
 ```
-bnb_model = BB.initialize(; 
+bnb_model = BB.initialize(;
     branch_strategy = BB.MOST_INFEASIBLE,
     Node = MIPNode,
     root = m,
@@ -224,12 +224,12 @@ The main three functions that need to be called to optimize a problem using Bono
 m = Model(HiGHS.Optimizer)
 set_optimizer_attribute(m, "log_to_console", false)
 @variable(m, x[1:3] >= 0)
-@constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)   
-@constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)   
-@constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] >= 10.5)   
+@constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] >= 6.1)
+@constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] >= 8.1)
+@constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] >= 10.5)
 @objective(m, Min, x[1]+1.2x[2]+3.2x[3])
 
-bnb_model = BB.initialize(; 
+bnb_model = BB.initialize(;
     branch_strategy = BB.MOST_INFEASIBLE,
     Node = MIPNode,
     root = m,
