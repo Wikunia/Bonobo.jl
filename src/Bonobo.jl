@@ -169,7 +169,7 @@ Initialize the branch and bound framework with the the following arguments.
 Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various methods.
 
 # Keyword arguments
-- `traverse_strategy` [`BFS`] currently the only supported traverse strategy is [`BFS`](@ref). Should be an [`AbstractTraverseStrategy`](@ref)
+- `traverse_strategy` [`BestFirstSearch`] currently the only supported traverse strategy is [`BestFirstSearch`](@ref). Should be an [`AbstractTraverseStrategy`](@ref)
 - `branch_strategy` [`FIRST`] currently the only supported branching strategies are [`FIRST`](@ref) and [`MOST_INFEASIBLE`](@ref). Should be an [`AbstractBranchStrategy`](@ref)
 - `atol` [1e-6] the absolute tolerance to check whether a value is discrete
 - `rtol` [1e-6] the relative tolerance to check whether a value is discrete
@@ -184,7 +184,7 @@ Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various method
 Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 """
 function initialize(;
-    traverse_strategy = BFS(),
+    traverse_strategy = BestFirstSearch(),
     branch_strategy = FIRST(),
     atol = 1e-6,
     rtol = 1e-6,

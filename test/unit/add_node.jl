@@ -18,7 +18,7 @@ struct TestRoot end
         sense = :Min
     )
     BB.set_root!(bnb_model, NamedTuple())
-    root = BB.get_next_node(bnb_model, BB.BFS())
+    root = BB.get_next_node(bnb_model, BB.BestFirstSearch())
     lb, ub = BB.evaluate_node!(bnb_model, root)
     BB.set_node_bound!(bnb_model.sense, root, lb, ub)
 
