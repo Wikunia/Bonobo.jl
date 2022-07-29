@@ -91,12 +91,14 @@ which dispatches on the `branch_strategy` argument.
 abstract type AbstractBranchStrategy end
 
 """
-    BFS <: AbstractTraverseStrategy
+    BestFirstSearch <: AbstractTraverseStrategy
 
-The BFS traverse strategy always picks the node with the lowest bound first.
+The BestFirstSearch traverse strategy always picks the node with the lowest bound first.
 If there is a tie then the smallest node id is used as a tie breaker.
 """
-struct BFS <: AbstractTraverseStrategy end
+struct BestFirstSearch <: AbstractTraverseStrategy end
+
+@deprecate BFS() BestFirstSearch() false
 
 """
     FIRST <: AbstractBranchStrategy
