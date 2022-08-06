@@ -1,6 +1,7 @@
 # Changelog
 
-## Unreleased
+## v0.1.3
+- BFS deprecated for BestFirstSearch
 
 ## v0.1.2
 - Bugfix: It was possible to add a node with a worse lower bound than the best incumbent

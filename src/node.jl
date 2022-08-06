@@ -63,12 +63,12 @@ function create_node(Node, node_id::Int, parent::Union{AbstractNode, Nothing}, n
 end
 
 """
-    get_next_node(tree::BnBTree, travese_strategy::BFS)
+    get_next_node(tree::BnBTree, ::BestFirstSearch)
 
 Get the next node of the tree which shall be evaluted next by [`evaluate_node!`](@ref).
 If you want to implement your own traversing strategy check out [`AbstractTraverseStrategy`](@ref).
 """
-function get_next_node(tree::BnBTree, travese_strategy::BFS)
+function get_next_node(tree::BnBTree, ::BestFirstSearch)
     node_id, _ = peek(tree.node_queue)
     return tree.nodes[node_id]
 end
