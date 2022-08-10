@@ -411,7 +411,8 @@ Return the solution values of the problem.
 See [`get_objective_value`](@ref) to obtain the objective value instead.
 """
 function get_solution(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:DefaultSolution{N,V}}
-    return tree.solutions[result].solution
+    #return tree.solutions[result].solution
+    return tree.incumbent_solution.solution
 end
 
 """
