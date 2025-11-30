@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.4
+- Allow DataStructures 0.19
+
 ## v0.1.3
 - BFS deprecated for BestFirstSearch
 
@@ -10,7 +13,6 @@
 
 ## v0.1.1
 - Branching and traversing strategies take values not types
-
 
 ## v0.1.0
 - BFS traverse strategy
