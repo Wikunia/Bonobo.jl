@@ -6,6 +6,7 @@
         :id,
         :lb,
         :ub,
+        :depth
     )
         Core.getproperty(Core.getproperty(c, :std), s)
     else
@@ -18,6 +19,7 @@ end
         :id,
         :lb,
         :ub,
+        :depth
     )
         Core.setproperty!(c.std, s, v)
     else

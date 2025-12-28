@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.5
+- Implementation of DFS
+
 ## v0.1.4
 - Allow DataStructures 0.19
 

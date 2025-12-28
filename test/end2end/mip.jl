@@ -115,6 +115,35 @@ end
     @test BB.get_objective_value(bnb_model) ≈ 5.2
 end
 
+@testset "MIP Problem with 3 variables DFS" begin
+    m = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(m, "log_to_console", false)
+    @variable(m, x[1:3] >= 0)
+    @constraint(m, 0.5x[1]+3.1x[2]+4.2x[3] <= 6.1)
+    @constraint(m, 1.9x[1]+0.7x[2]+0.2x[3] <= 8.1)
+    @constraint(m, 2.9x[1]-2.3x[2]+4.2x[3] <= 10.5)
+    @objective(m, Max, x[1]+1.2x[2]+3.2x[3])
+
+    bnb_model = BB.initialize(;
+        traverse_strategy = BB.DepthFirstSearch(),
+        Node = MIPNode,
+        root = m,
+        sense = objective_sense(m) == MOI.MAX_SENSE ? :Max : :Min
+    )
+    BB.set_root!(bnb_model, (
+        lbs = zeros(length(x)),
+        ubs = fill(Inf, length(x)),
+        status = MOI.OPTIMIZE_NOT_CALLED
+    ))
+
+    BB.optimize!(bnb_model)
+
+    sol_x = convert.(Int, BB.get_solution(bnb_model))
+
+    @test sol_x == [2,0,1]
+    @test BB.get_objective_value(bnb_model) ≈ 5.2
+end
+
 @testset "MIP Problem with 3 variables minimize" begin
     m = Model(HiGHS.Optimizer)
     set_optimizer_attribute(m, "log_to_console", false)

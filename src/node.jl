@@ -53,10 +53,12 @@ For information on that see [`set_root!`](@ref).
 """
 function create_node(Node, node_id::Int, parent::Union{AbstractNode, Nothing}, node_info::NamedTuple)
     lb = -Inf
+    depth = 1
     if !isnothing(parent)
         lb = parent.lb
+        depth = parent.depth + 1
     end
-    bnb_node = structfromnt(BnBNodeInfo, (id = node_id, lb = lb, ub = Inf))
+    bnb_node = structfromnt(BnBNodeInfo, (id = node_id, lb = lb, ub = Inf, depth = depth))
     bnb_nt = (std = bnb_node,)
     node_nt = merge(bnb_nt, node_info)
     return structfromnt(Node, node_nt)
@@ -69,7 +71,12 @@ Get the next node of the tree which shall be evaluted next by [`evaluate_node!`]
 If you want to implement your own traversing strategy check out [`AbstractTraverseStrategy`](@ref).
 """
 function get_next_node(tree::BnBTree, ::BestFirstSearch)
-    node_id, _ = peek(tree.node_queue)
+    node_id, _ = first(tree.node_queue)
+    return tree.nodes[node_id]
+end
+
+function get_next_node(tree::BnBTree, ::DepthFirstSearch)
+    node_id = argmax(k -> tree.nodes[k].depth, keys(tree.nodes))
     return tree.nodes[node_id]
 end
 
