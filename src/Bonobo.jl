@@ -29,12 +29,14 @@ This needs to be added by every `AbstractNode` as `std::BnBNodeInfo`
 id :: Int
 lb :: Float64
 ub :: Float64
+depth :: Int
 ```
 """
 mutable struct BnBNodeInfo
     id :: Int
     lb :: Float64
     ub :: Float64
+    depth :: Int
 end
 
 """
@@ -97,6 +99,8 @@ The BestFirstSearch traverse strategy always picks the node with the lowest boun
 If there is a tie then the smallest node id is used as a tie breaker.
 """
 struct BestFirstSearch <: AbstractTraverseStrategy end
+
+struct DepthFirstSearch <: AbstractTraverseStrategy end
 
 @deprecate BFS() BestFirstSearch() false
 
@@ -272,8 +276,12 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         end
 
         tree.node_queue[node.id] = (node.lb, node.id)
-        _ , prio = peek(tree.node_queue)
-        @assert tree.lb <= prio[1]
+        _ , prio = first(tree.node_queue)
+        if tree.lb > prio[1]+1e-6
+            @show tree.lb
+            @show prio[1]
+        end
+        @assert tree.lb <= prio[1]+1e-6
         tree.lb = prio[1]
 
         updated = update_best_solution!(tree, node)
@@ -288,16 +296,16 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         branch!(tree, node)
         callback(tree, node)
     end
-    sort_solutions!(tree.solutions, tree.sense)
+    sort_solutions!(tree.solutions)
 end
 
 """
-    sort_solutions!(solutions::Vector{<:AbstractSolution}, sense::Symbol)
+    sort_solutions!(solutions::Vector{<:AbstractSolution})
 
 Sort the solutions vector by objective value such that the best solution is at index 1.
 """
-function sort_solutions!(solutions::Vector{<:AbstractSolution}, sense::Symbol)
-    sort!(solutions; rev = sense == :Max, by=s->s.objective)
+function sort_solutions!(solutions::Vector{<:AbstractSolution})
+    sort!(solutions; by=s->s.objective)
 end
 
 """
